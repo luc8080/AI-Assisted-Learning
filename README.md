@@ -5,9 +5,9 @@
 基於 dataAgent 改寫
 
 待執行
-製造商產品規格書待補 (濾波器、鐵氧體磁珠和晶片)(Murata Electronics、Samsung Electro-Mechanics、TAI-TECH Advanced Electronics Co., Ltd.、TDK Corporation)
-改用其他 llm 模型
-使用 streamlit 設計簡易的使用者互動介面
+-製造商產品規格書待補 (濾波器、鐵氧體磁珠和晶片)(Murata Electronics、Samsung Electro-Mechanics、TAI-TECH Advanced Electronics Co., Ltd.、TDK Corporation)
+-改用其他 llm 模型
+-使用 streamlit 設計簡易的使用者互動介面
 
 # 預期效果
 ## 使用者輸入範例
