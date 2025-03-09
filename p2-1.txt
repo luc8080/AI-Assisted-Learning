@@ -1,0 +1,2 @@
+Customer Part Number,Impedance (Ω) at 100 MHz,Rated Current (mA),DC Resistance Initial (Ω),DC Resistance After Testing (Ω),Remark
+BLM15PG100SN1D,5 to 15,10 - 1000,0.025,0.05,For DC power line
