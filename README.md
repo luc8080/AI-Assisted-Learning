@@ -1,9 +1,13 @@
 # AI-Assisted-Learning
 113-2 網路學習輔助系統研究
 
-# 20250309
-基於 dataAgent 改寫
+# 20250315
+OpenAI Agents SDK (https://openai.github.io/openai-agents-python/)
 
+use Google Gemini on OpenAI Agents SDK example see: UseGeminiEx1.py
+
+
+# 20250309
 待執行
  - 製造商產品規格書待補 (濾波器、鐵氧體磁珠和晶片)(Murata Electronics、Samsung Electro-Mechanics、TAI-TECH Advanced Electronics Co., Ltd.、TDK Corporation)
  - 改用其他 llm 模型
