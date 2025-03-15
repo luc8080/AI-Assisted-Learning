@@ -4,7 +4,7 @@
 # 20250315
 OpenAI Agents SDK (https://openai.github.io/openai-agents-python/)
 
-use Google Gemini on OpenAI Agents SDK example see: UseGeminiEx1.py
+use Google Gemini With the OpenAI Agents example see: UseGeminiEx1.py
 
 
 # 20250309
