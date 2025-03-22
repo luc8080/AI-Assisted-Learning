@@ -1,30 +1,46 @@
 import sqlite3
 
-DB_PATH = "product_specs.db"
+db_path = "product_specs.db"
 
 def init_db():
-    """初始化 SQLite 資料庫"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS product_specs (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         content TEXT NOT NULL)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS query_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_input TEXT NOT NULL,
+                        response TEXT NOT NULL)''')
     conn.commit()
     conn.close()
 
 def save_pdf_text_to_db(text):
-    """儲存解析後的 PDF 內容至資料庫"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO product_specs (content) VALUES (?)", (text,))
     conn.commit()
     conn.close()
 
-def get_all_product_specs():
-    """從資料庫擷取所有產品規格"""
-    conn = sqlite3.connect(DB_PATH)
+def check_database_status():
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT content FROM product_specs")
+    cursor.execute("SELECT COUNT(*) FROM product_specs")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count > 0
+
+def save_query_to_db(user_input, response):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO query_history (user_input, response) VALUES (?, ?)", (user_input, response))
+    conn.commit()
+    conn.close()
+
+def get_all_queries():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_input, response FROM query_history")
     rows = cursor.fetchall()
     conn.close()
-    return "\n".join([row[0] for row in rows]) if rows else None
+    return rows
