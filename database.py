@@ -1,3 +1,4 @@
+# database.py
 import sqlite3
 
 db_path = "product_specs.db"
@@ -44,3 +45,11 @@ def get_all_queries():
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+def get_all_product_specs():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT content FROM product_specs")
+    rows = cursor.fetchall()
+    conn.close()
+    return "\n".join([row[0] for row in rows]) if rows else ""

@@ -1,4 +1,6 @@
+# recommendation.py
 import asyncio
+import streamlit as st
 from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel, handoff
 from dotenv import load_dotenv
 import os
@@ -50,4 +52,3 @@ def process_recommendation(user_input):
         save_query_to_db(user_input, response)
         st.success("推薦結果：")
         st.write(response)
-
