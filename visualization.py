@@ -1,85 +1,89 @@
-import matplotlib
+# visualization.py
+import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
-import streamlit as st
+import pandas as pd
 
-matplotlib.rcParams['font.family'] = 'Microsoft JhengHei'
-matplotlib.rcParams['axes.unicode_minus'] = False
+def plot_recommendation_radar(products: list[dict], competitor_spec: dict = None):
+    st.subheader("📊 推薦產品雷達圖比較")
 
-def plot_radar_chart(products):
-    labels = ["阻抗 (Ω)", "額定電流 (mA)", "DCR (mΩ)", "溫度範圍 (°C)"]
-    values, names = [], []
+    if not products:
+        st.info("⚠️ 無推薦產品可比較")
+        return
+
+    metrics = ["impedance", "current", "dcr", "temp_min", "temp_max"]
+    labels = ["阻抗", "額定電流", "DCR", "最低溫", "最高溫"]
+
+    def normalize_metric(metric, values):
+        arr = np.array(values, dtype=np.float64)
+        if metric == "dcr":
+            arr = np.max(arr) - arr  # DCR 越小越好
+        return (arr - arr.min()) / (arr.max() - arr.min() + 1e-9)
+
+    data = []
+    names = []
+
     for p in products:
-        try:
-            imp = p.get("impedance", 0)
-            cur = p.get("current", 0)
-            dcr = p.get("dcr", 0)
-            temp = p.get("temp_max", 0) - p.get("temp_min", 0)
-            values.append([imp, cur, -dcr, temp])
-            names.append(f"{p['name']} ({p['vendor']})")
-        except: continue
-    if not values: return
-    values = np.array(values)
-    norm = (values - values.min(0)) / (values.max(0) - values.min(0) + 1e-6)
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist() + [0]
+        row = [p.get(m, 0) for m in metrics]
+        data.append(row)
+        names.append(p.get("name", f"產品{len(data)}"))
+
+    if competitor_spec:
+        competitor_row = [competitor_spec.get(m, 0) for m in metrics]
+        data.append(competitor_row)
+        names.append("🏴 競品")
+
+    data = np.array(data)
+    normalized = np.array([normalize_metric(m, data[:, i]) for i, m in enumerate(metrics)]).T
+
+    angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
+    angles += angles[:1]
+
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    for i, val in enumerate(norm):
-        data = val.tolist() + [val[0]]
-        ax.plot(angles, data, label=names[i])
-        ax.fill(angles, data, alpha=0.1)
-    ax.set_theta_offset(np.pi / 2)
-    ax.set_theta_direction(-1)
-    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
-    ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.1))
+    for i, row in enumerate(normalized):
+        values = row.tolist() + row[:1].tolist()
+        ax.plot(angles, values, label=names[i])
+        ax.fill(angles, values, alpha=0.1)
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_title("推薦產品比較", fontsize=14)
+    ax.legend(loc="best", bbox_to_anchor=(1.2, 1.1))
     st.pyplot(fig)
 
-def plot_match_score_bar_chart(products, user_req):
-    scores, labels = [], []
-    for p in products:
+def plot_condition_match_bar(requirements: dict, products: list[dict]):
+    st.subheader("📋 條件達成率分析")
+
+    def match_score(product: dict, req: dict) -> float:
         score = 0
-        if user_req.get("impedance") * (1 - user_req.get("impedance_tolerance", 0.25)) <= p.get("impedance", 0) <= user_req.get("impedance") * (1 + user_req.get("impedance_tolerance", 0.25)):
-            score += 1
-        if p.get("current", 0) >= user_req.get("current", 0):
-            score += 1
-        if p.get("dcr", 9999) <= user_req.get("dcr", 9999):
-            score += 1
-        percent = round(score / 3 * 100)
-        scores.append(percent)
-        labels.append(f"{p['name']} ({p['vendor']})")
-    fig, ax = plt.subplots(figsize=(8, 4))
-    bars = ax.barh(labels, scores, color="skyblue")
-    ax.set_xlim(0, 100)
-    for bar in bars:
-        ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2, f"{bar.get_width()}%", va='center')
-    st.pyplot(fig)
+        total = 0
+        if "impedance" in req and "impedance" in product:
+            if abs(product["impedance"] - req["impedance"]) <= req.get("impedance_tolerance", 0.25) * req["impedance"]:
+                score += 1
+            total += 1
+        if "current" in req and "current" in product:
+            if product["current"] >= req["current"]:
+                score += 1
+            total += 1
+        if "dcr" in req and "dcr" in product:
+            if product["dcr"] <= req["dcr"]:
+                score += 1
+            total += 1
+        if "temp_min" in req and "temp_min" in product:
+            if product["temp_min"] <= req["temp_min"]:
+                score += 1
+            total += 1
+        if "temp_max" in req and "temp_max" in product:
+            if product["temp_max"] >= req["temp_max"]:
+                score += 1
+            total += 1
+        return round(score / total * 100, 2) if total else 0.0
 
-def plot_comparison_radar_chart(competitor_name, competitor_text, products):
-    labels = ["阻抗 (Ω)", "額定電流 (mA)", "DCR (mΩ)", "溫度範圍 (°C)"]
-    comp_data = {"impedance": 30, "current": 10000, "dcr": 2.5, "temp_min": -20, "temp_max": 100}
-    comp_vector = [comp_data["impedance"], comp_data["current"], -comp_data["dcr"], comp_data["temp_max"] - comp_data["temp_min"]]
-    values = [comp_vector]
-    names = [f"{competitor_name}（競品）"]
-    for p in products:
-        try:
-            values.append([
-                p.get("impedance", 0),
-                p.get("current", 0),
-                -p.get("dcr", 0),
-                p.get("temp_max", 0) - p.get("temp_min", 0)
-            ])
-            names.append(f"{p['name']} ({p['vendor']})")
-        except: continue
-    values = np.array(values)
-    norm = (values - values.min(0)) / (values.max(0) - values.min(0) + 1e-6)
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist() + [0]
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    for i, val in enumerate(norm):
-        data = val.tolist() + [val[0]]
-        ax.plot(angles, data, label=names[i])
-        ax.fill(angles, data, alpha=0.1)
-    ax.set_theta_offset(np.pi / 2)
-    ax.set_theta_direction(-1)
-    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
-    ax.set_title("競品 vs 自家產品雷達圖")
-    ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.1))
-    st.pyplot(fig)
+    scores = [(p.get("name", f"產品{i+1}"), match_score(p, requirements)) for i, p in enumerate(products)]
+    scores.sort(key=lambda x: x[1], reverse=True)
+
+    df = pd.DataFrame(scores, columns=["產品名稱", "條件達成率 (%)"])
+    st.bar_chart(df.set_index("產品名稱"))
+
+    with st.expander("📋 條件符合度明細"):
+        st.dataframe(df, use_container_width=True)
