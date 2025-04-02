@@ -1,4 +1,3 @@
-# visualization.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -29,13 +28,12 @@ def plot_recommendation_radar(products: list[dict], competitor_spec: dict = None
         return 1 - norm if inverse else norm
 
     data = pd.DataFrame(products)
-    data["label"] = data["name"].fillna("產品")
+    data["label"] = data["part_number"].fillna("產品")
 
     for metric in metrics:
         if metric not in data.columns:
             data[metric] = 0
 
-    # 特殊處理 DCR 反轉（越低越好）
     for metric in metrics:
         inv = (metric == "dcr")
         data[metric + "_norm"] = normalize(data[metric], inverse=inv)
@@ -64,29 +62,30 @@ def plot_condition_match_bar(requirements: dict, products: list[dict]):
     def match_score(product: dict, req: dict) -> float:
         score = 0
         total = 0
-        if "impedance" in req and "impedance" in product:
-            if abs(product["impedance"] - req["impedance"]) <= req.get("impedance_tolerance", 0.25) * req["impedance"]:
+        if req.get("impedance") is not None and product.get("impedance") is not None:
+            tolerance = req.get("impedance_tolerance", 0.25)
+            if abs(product["impedance"] - req["impedance"]) <= tolerance * req["impedance"]:
                 score += 1
             total += 1
-        if "current" in req and "current" in product:
+        if req.get("current") is not None and product.get("current") is not None:
             if product["current"] >= req["current"]:
                 score += 1
             total += 1
-        if "dcr" in req and "dcr" in product:
+        if req.get("dcr") is not None and product.get("dcr") is not None:
             if product["dcr"] <= req["dcr"]:
                 score += 1
             total += 1
-        if "temp_min" in req and "temp_min" in product:
+        if req.get("temp_min") is not None and product.get("temp_min") is not None:
             if product["temp_min"] <= req["temp_min"]:
                 score += 1
             total += 1
-        if "temp_max" in req and "temp_max" in product:
+        if req.get("temp_max") is not None and product.get("temp_max") is not None:
             if product["temp_max"] >= req["temp_max"]:
                 score += 1
             total += 1
         return round(score / total * 100, 2) if total else 0.0
 
-    scores = [(p.get("name", f"產品{i+1}"), match_score(p, requirements)) for i, p in enumerate(products)]
+    scores = [(p.get("part_number", f"產品{i+1}"), match_score(p, requirements)) for i, p in enumerate(products)]
     df = pd.DataFrame(scores, columns=["產品名稱", "條件達成率 (%)"])
     df = df.sort_values(by="條件達成率 (%)", ascending=False)
 
