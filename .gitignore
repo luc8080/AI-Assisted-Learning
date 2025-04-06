@@ -3,3 +3,8 @@ __pycache__
 .venv
 .env
 product_specs.db
+app copy.py
+database copy.py
+migrate_structured_specs_from_texts copy.py
+recommendation copy.py
+uploader copy.py

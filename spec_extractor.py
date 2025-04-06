@@ -13,7 +13,7 @@ client = AsyncOpenAI(
 )
 
 model = OpenAIChatCompletionsModel(
-    model="gemini-2.0-pro",  # 使用較強模型以利表格理解
+    model="gemini-2.0-flash",  # 使用較強模型以利表格理解
     openai_client=client
 )
 
