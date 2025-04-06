@@ -1,57 +1,54 @@
 # 🧠 AI 產品推薦系統
 
-本系統結合 OpenAI Agents SDK、Streamlit 與 SQLite，協助使用者從 PDF 產品規格書中找出最適合的產品，支援自然語言推薦、競品比對推薦與互動式視覺化比較。
+這是一套 AI 驅動的產品推薦平台，支援使用者上傳產品的 PDF 規格書，並透過 AI 釐清需求、推薦最適合的產品，並進行條件匹配分析與視覺化。
+🚀 支援 LLM 智能推薦 + 結構化資料篩選雙重引擎
 
 ---
 
-## 📦 專案模組一覽
+⚙️ 技術架構
 
-| 檔案 / 模組名稱       | 功能說明 |
-|------------------------|----------|
-| `app.py`               | 主應用程式入口，整合所有功能模組與使用流程 |
-| `database.py`          | 資料庫初始化與管理，包含規格書與查詢紀錄 |
-| `uploader.py`          | PDF 規格書上傳、解析、預覽與刪除 |
-| `recommendation.py`    | 產品推薦主流程，自然語言與競品模式皆可執行 |
-| `requirement_flow.py`  | AI 多輪對話需求釐清與補問流程控制 |
-| `spec_extractor.py`    | 使用 LLM 將表格 row 轉為結構化產品規格 dict |
-| `table_parser.py`      | 從 PDF 表格中擷取指定料號的規格資料 |
-| `visualization.py`     | 繪製雷達圖、條件達成率等互動式視覺化圖表 |
-| `stat_visualizer.py`   | 根據純文字內容分析 DCR 與電流分布圖（統計視覺化） |
-| `ui.py`                | UI 區塊組件，如需求輸入、查詢紀錄、側邊欄元件等 |
-| `requirements.txt`     | 所有依賴套件清單（含 Streamlit、Agents SDK 等） |
-| `product_specs.db`     | SQLite 資料庫檔案，儲存產品內容與查詢紀錄 |
+技術	用途
+Streamlit	UI 前端與互動控制
+SQLite	本地化資料儲存
+OpenAI Agents SDK + Gemini	需求釐清、產品推薦、資料分類、規格萃取
+pdfplumber	PDF 文本與表格處理
+Plotly	推薦視覺化圖表（雷達圖、柱狀圖）
+Python 3.10+	主程式語言
+
+---
+## 📁 專案結構
+
+├── app.py                       # Streamlit 主頁面入口
+├── database.py                 # 所有資料庫 CRUD 操作
+├── uploader.py                 # PDF 上傳與預覽、刪除
+├── table_parser.py             # PDF 表格解析器（欄位標準化）
+├── spec_extractor.py           # 從單筆資料擷取產品規格（LLM）
+├── batch_spec_extractor.py     # 從整份 PDF 文本批次萃取多筆產品規格
+├── recommendation.py           # 使用需求 + 結構化資料推薦產品（LLM）
+├── requirement_flow.py         # 與使用者釐清需求的對話流程
+├── visualization.py            # 雷達圖 / 條件匹配視覺化圖表
+├── stat_visualizer.py          # 所有 PDF 的 DCR / Current 統計分布圖
+├── llm_categorizer.py          # 自動分類 PDF 的供應商 / 類別 / 應用場域
+├── ui.py                       # 查詢歷史紀錄與需求輸入欄位
+├── migrate_structured_specs_from_texts.py  # 一次性導入舊資料的遷移腳本
+└── .env                        # 儲存 API 金鑰與環境變數
 
 ---
 
-## 🚀 功能特色
+📦 資料庫結構
 
-### 🧠 AI 產品推薦（自然語言模式）
-- 使用者輸入如「10A 電流、100MHz 阻抗」的需求
-- AI 解析條件 → 從 PDF 資料庫比對規格 → 推薦產品
+使用 SQLite（product_specs.db）包含三張表：
 
-### 🔁 競品比對推薦
-- 輸入競品料號（如 Murata 型號）
-- 從 PDF 表格擷取 row → 分析規格 → 推薦對應自家產品
+product_specs：原始上傳的 PDF 文本
 
-### 📊 視覺化比較（Plotly）
-- 雷達圖：推薦產品與競品的多維規格比較
-- 條件達成率圖：視覺化每款產品與需求的匹配度
-- DCR / 電流分布圖：從 PDF 文本自動統計繪製
+query_history：查詢紀錄（需求與推薦結果）
 
-### 📂 PDF 規格管理
-- 上傳 PDF、自動解析文字並存入 DB
-- 可預覽與刪除已上傳規格書
-- 支援多家供應商規格管理
-
-### 🗂️ 查詢紀錄保存
-- 自動儲存使用者需求與 AI 回覆
-- 可從側邊欄查詢歷史紀錄
+structured_specs：經由 LLM 萃取出的產品結構化規格資訊（推薦依據）
 
 ---
 
 ## 📌 安裝與啟動
 
-```bash
 # 建立虛擬環境並安裝套件
 python -m venv .venv
 source .venv/bin/activate      # Windows 請使用 .venv\Scripts\activate
@@ -63,13 +60,3 @@ streamlit run app.py
 #.env 設定範例
 GOOGLE_GEMINI_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent
 GOOGLE_GEMINI_API_KEY=你的_API_Key
-
-# 資料庫資料表
-product_specs	儲存每份 PDF 的文字內容、來源供應商、後續可擴充結構化規格
-query_history	儲存使用者查詢紀錄與 AI 回覆內容
-
-# 未來可擴充功能
-自動轉換 PDF 表格為結構化規格資料（JSON）
-推薦排序設定（如 DCR 最低優先）
-多角色權限登入（研發 / 採購 / 系統管理員）
-匯出推薦報告（PDF / CSV）
