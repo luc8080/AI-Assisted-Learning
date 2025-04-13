@@ -1,49 +1,61 @@
-from typing import List, Dict, Tuple
+# === 檔案路徑：rule_recommender.py
+# === 功能說明：
+# 根據使用者需求條件，篩選結構化產品清單，排除不符合條件者，並排序推薦清單。
+# === 最後更新：2025-04-13
 
-def filter_with_rejection_reason(requirements: dict, products: List[dict]) -> Tuple[List[dict], List[dict]]:
-    matched = []
-    rejected = []
+def filter_with_rejection_reason(products: list[dict], requirements: dict) -> list[dict]:
+    filtered = []
 
     for p in products:
-        reasons = []
+        reason = []
 
-        if requirements.get("impedance") is not None and p.get("impedance") is not None:
-            tol = requirements.get("impedance_tolerance", 0.25)
-            if abs(p["impedance"] - requirements["impedance"]) > tol * requirements["impedance"]:
-                reasons.append("阻抗不符合")
+        try:
+            if "impedance" in requirements and p.get("impedance") is not None:
+                try:
+                    imp = float(p["impedance"])
+                    req = float(requirements["impedance"])
+                    tolerance = requirements.get("impedance_tolerance", 0.25)
+                    if abs(imp - req) > tolerance * req:
+                        reason.append("阻抗不符")
+                except Exception:
+                    reason.append("阻抗格式錯誤")
 
-        if requirements.get("current") is not None and p.get("current") is not None:
-            if p["current"] < requirements["current"]:
-                reasons.append("電流不足")
+            if "current" in requirements and p.get("current") is not None:
+                try:
+                    if float(p["current"]) < float(requirements["current"]):
+                        reason.append("額定電流不足")
+                except Exception:
+                    reason.append("電流格式錯誤")
 
-        if requirements.get("dcr") is not None and p.get("dcr") is not None:
-            if p["dcr"] > requirements["dcr"]:
-                reasons.append("DCR 過高")
+            if "dcr" in requirements and p.get("dcr") is not None:
+                try:
+                    if float(p["dcr"]) > float(requirements["dcr"]):
+                        reason.append("DCR 過高")
+                except Exception:
+                    reason.append("DCR 格式錯誤")
 
-        if requirements.get("temp_min") is not None and p.get("temp_min") is not None:
-            if p["temp_min"] > requirements["temp_min"]:
-                reasons.append("最低溫度不符")
+            if reason:
+                continue
+            filtered.append(p)
 
-        if requirements.get("temp_max") is not None and p.get("temp_max") is not None:
-            if p["temp_max"] < requirements["temp_max"]:
-                reasons.append("最高溫度不符")
+        except Exception as e:
+            print(f"[篩選錯誤] {e}")
+            continue
 
-        if requirements.get("size") is not None and p.get("size") != requirements["size"]:
-            reasons.append("尺寸不符")
+    return filtered
 
-        if reasons:
-            p_with_reason = p.copy()
-            p_with_reason["rejected_reason"] = "、".join(reasons)
-            rejected.append(p_with_reason)
-        else:
-            matched.append(p)
+def sort_candidates(products: list[dict], requirements: dict) -> list[dict]:
+    def score(p):
+        s = 0
+        try:
+            if "current" in requirements and p.get("current") is not None:
+                s += float(p["current"])
+            if "impedance" in requirements and p.get("impedance") is not None:
+                s += -abs(float(p["impedance"]) - float(requirements["impedance"]))
+            if "dcr" in requirements and p.get("dcr") is not None:
+                s -= float(p["dcr"])
+        except:
+            pass
+        return s
 
-    return matched, rejected
-
-def sort_candidates(products: List[dict], priority: str = "current") -> List[dict]:
-    if priority == "dcr":
-        return sorted(products, key=lambda p: p.get("dcr", float("inf")))
-    elif priority == "current":
-        return sorted(products, key=lambda p: -p.get("current", 0))
-    else:
-        return products
+    return sorted(products, key=score, reverse=True)

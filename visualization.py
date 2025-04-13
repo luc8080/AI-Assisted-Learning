@@ -1,9 +1,14 @@
+# === 檔案路徑：visualization.py
+# === 功能說明：
+# 提供推薦結果的雷達圖與條件達成率圖表，使用 Plotly 畫圖。
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
+# === 雷達圖展示 ===
 def plot_recommendation_radar(products: list[dict], competitor_spec: dict = None):
     st.subheader("📊 推薦產品雷達圖（互動式）")
 
@@ -24,6 +29,8 @@ def plot_recommendation_radar(products: list[dict], competitor_spec: dict = None
 
     def normalize(value_list, inverse=False):
         arr = np.array(value_list, dtype=np.float64)
+        if arr.max() == arr.min():
+            return np.ones_like(arr)
         norm = (arr - arr.min()) / (arr.max() - arr.min() + 1e-9)
         return 1 - norm if inverse else norm
 
@@ -35,57 +42,73 @@ def plot_recommendation_radar(products: list[dict], competitor_spec: dict = None
             data[metric] = 0
 
     for metric in metrics:
-        inv = (metric == "dcr")
-        data[metric + "_norm"] = normalize(data[metric], inverse=inv)
+        inverse = metric == "dcr"
+        data[f"{metric}_norm"] = normalize(data[metric], inverse=inverse)
 
-    for i, row in data.iterrows():
+    for _, row in data.iterrows():
         fig.add_trace(go.Scatterpolar(
-            r=row[[m + "_norm" for m in metrics]],
+            r=row[[f"{m}_norm" for m in metrics]],
             theta=[labels[m] for m in metrics],
             fill='toself',
             name=row["label"]
         ))
 
     fig.update_layout(
-        polar=dict(
-            radialaxis=dict(visible=True, range=[0, 1])
-        ),
+        polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
         showlegend=True,
-        title="規格雷達圖比較"
+        title="推薦產品規格比較"
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
+# === 條件達成率條圖 ===
 def plot_condition_match_bar(requirements: dict, products: list[dict]):
     st.subheader("📋 條件達成率分析（互動式）")
 
     def match_score(product: dict, req: dict) -> float:
         score = 0
         total = 0
+
         if req.get("impedance") is not None and product.get("impedance") is not None:
             tolerance = req.get("impedance_tolerance", 0.25)
             if abs(product["impedance"] - req["impedance"]) <= tolerance * req["impedance"]:
                 score += 1
             total += 1
+
         if req.get("current") is not None and product.get("current") is not None:
             if product["current"] >= req["current"]:
                 score += 1
             total += 1
+
         if req.get("dcr") is not None and product.get("dcr") is not None:
             if product["dcr"] <= req["dcr"]:
                 score += 1
             total += 1
+
         if req.get("temp_min") is not None and product.get("temp_min") is not None:
             if product["temp_min"] <= req["temp_min"]:
                 score += 1
             total += 1
+
         if req.get("temp_max") is not None and product.get("temp_max") is not None:
             if product["temp_max"] >= req["temp_max"]:
                 score += 1
             total += 1
-        return round(score / total * 100, 2) if total else 0.0
 
-    scores = [(p.get("part_number", f"產品{i+1}"), match_score(p, requirements)) for i, p in enumerate(products)]
+        return round(score / total * 100, 2) if total > 0 else 0.0
+
+    try:
+        scores = [
+            (
+                p.get("part_number", f"產品{i+1}"),
+                match_score(p, requirements)
+            )
+            for i, p in enumerate(products) if isinstance(p, dict)
+        ]
+    except Exception as e:
+        st.error(f"❌ 條件達成率分析錯誤：{e}")
+        return
+
     df = pd.DataFrame(scores, columns=["產品名稱", "條件達成率 (%)"])
     df = df.sort_values(by="條件達成率 (%)", ascending=False)
 
