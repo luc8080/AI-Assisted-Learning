@@ -17,4 +17,4 @@ learning_assistant/
 ├── .env
 └── requirements.txt
 
-zip -r learning_assistant_clean.zip learning_assistant -x "*/.*" "*/_*"
+zip -r learning_assistant_clean.zip . -x ".*" "_*"
