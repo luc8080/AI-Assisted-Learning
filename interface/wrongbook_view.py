@@ -2,18 +2,24 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from data_store.question_loader import get_question_by_id
-from interface.task_view import run_task_view
 
 DB_PATH = "data_store/user_log.sqlite"
 
 # 取得錯題紀錄
 def get_wrong_answers():
     conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE username = ?", (st.session_state.username,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return pd.DataFrame()
+    user_id = row[0]
     df = pd.read_sql_query("""
         SELECT * FROM answer_log
-        WHERE is_correct = 0
+        WHERE is_correct = 0 AND user_id = ?
         ORDER BY timestamp DESC
-    """, conn)
+    """, conn, params=(user_id,))
     conn.close()
     return df
 
@@ -34,7 +40,6 @@ def show_question_detail(row):
 
     if st.button(f"🔁 重新挑戰 {row['question_id']}"):
         st.session_state.from_wrongbook = row["question_id"]
-        st.session_state.challenge_mode = True
         st.rerun()
 
     note = st.text_area("✏️ 加入筆記（可選）：", key=f"note_{row['id']}")
@@ -43,11 +48,6 @@ def show_question_detail(row):
 
 # 主錯題本頁面
 def run_wrongbook_view():
-    # ✅ 若正在挑戰模式，直接載入作答頁
-    if st.session_state.get("challenge_mode"):
-        run_task_view()
-        st.stop()
-
     st.header("❌ 我的錯題本")
     df = get_wrong_answers()
 

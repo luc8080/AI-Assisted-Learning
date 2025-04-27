@@ -16,21 +16,39 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('student', 'teacher', 'admin'))
+        )
+    """)
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS answer_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
+            user_id INTEGER,
             question_id TEXT,
             student_answer TEXT,
             correct_answer TEXT,
-            is_correct INTEGER
+            is_correct INTEGER,
+            FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
     conn.commit()
     conn.close()
 
+# 根據登入者撈紀錄
 def get_all_logs():
     conn = sqlite3.connect(DB_PATH)
-    df = pd.read_sql_query("SELECT * FROM answer_log ORDER BY timestamp DESC", conn)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE username = ?", (st.session_state.username,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return pd.DataFrame()
+    user_id = row[0]
+    df = pd.read_sql_query("SELECT * FROM answer_log WHERE user_id = ? ORDER BY timestamp DESC", conn, params=(user_id,))
     conn.close()
     return df
 
@@ -54,7 +72,6 @@ def run_summary_view():
         'is_correct': '結果'
     }), use_container_width=True)
 
-    # 每日正確率圖表
     st.subheader("📈 每日正確率趨勢")
     df_chart = df.copy()
     df_chart['date'] = df_chart['timestamp'].dt.date
@@ -64,20 +81,17 @@ def run_summary_view():
     fig.update_layout(yaxis_tickformat=".0%", height=400)
     st.plotly_chart(fig, use_container_width=True)
 
-    # 總體正確率分布
     st.subheader("🎯 作答結果分布")
     pie_data = df['is_correct'].value_counts().reset_index()
     pie_data.columns = ['結果', '數量']
     fig2 = px.pie(pie_data, values='數量', names='結果', hole=0.4)
     st.plotly_chart(fig2, use_container_width=True)
 
-    # 學習摘要 + 主題分析
     st.subheader("📄 個人學習摘要 + 主題診斷")
     model = StudentModel()
     summary = model.export_summary()
     st.json(summary)
 
-    # 錯題主題分布圖
     st.subheader("📚 錯題主題分布圖")
     topic_stats = model.get_wrong_topic_distribution()
     if topic_stats:
@@ -87,7 +101,6 @@ def run_summary_view():
     else:
         st.info("目前無可統計的錯題主題資料")
 
-    # AI 小結建議（按鈕觸發）
     st.subheader("🤖 AI 總結建議")
     if st.button("📩 產生 AI 回饋建議"):
         prompt = json.dumps({

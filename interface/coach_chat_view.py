@@ -1,11 +1,55 @@
 import streamlit as st
 import sqlite3
 import json
-from models.student_model import StudentModel
-from assistant_core.coach.coach_agents import guide_agent, diagnose_agent, extend_agent
-from data_store.question_loader import get_question_by_id
-from agents import Runner
+import os
 import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel
+from models.student_model import StudentModel
+
+# === 初始化 Gemini 模型 ===
+load_dotenv()
+client = AsyncOpenAI(
+    base_url=os.getenv("GOOGLE_GEMINI_ENDPOINT"),
+    api_key=os.getenv("GOOGLE_GEMINI_API_KEY")
+)
+model = OpenAIChatCompletionsModel(
+    model="gemini-2.0-flash",
+    openai_client=client
+)
+
+# === 教練型 Agent（優化版，多輪版） ===
+coach_agent = Agent(
+    name="InteractiveCoach",
+    instructions="""
+你是一位親切且善於引導學生深入思考的 AI 國文老師。
+請務必根據提供的題目內容、選項、正確答案與學生作答資訊，進行精確且具依據的回覆。
+回覆時請遵守以下規則：
+- 必須引用題目或選項的原文字句作為依據，禁止編造未提供的內容。
+- 必須清楚說明為何正確答案正確，以及學生的誤選可能原因。
+- 回覆格式必須分為兩段：【回覆】與【反問】。
+- 每輪討論請結尾提出一個簡單問題，引導學生再思考。
+- 當達到第 3 輪時，請自動收斂並給予完整鼓勵性建議，結束互動。
+""",
+    model=model
+)
+
+# === 從資料庫取得題目內容 ===
+def get_question_text_by_id(qid):
+    conn = sqlite3.connect("data_store/question_bank.sqlite")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM questions WHERE id = ?", (qid,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    return {
+        "題號": row[0],
+        "出處": row[1],
+        "題幹": row[2],
+        "選項": {"A": row[3], "B": row[4], "C": row[5], "D": row[6]},
+        "正解": row[7]
+    }
 
 # === 取得最近錯題題號 ===
 def get_recent_wrong_qids(limit=10):
@@ -27,74 +71,68 @@ def get_student_answer_and_truth(qid):
     cursor = conn.cursor()
     cursor.execute("""
         SELECT student_answer, correct_answer FROM answer_log
-        WHERE question_id = ? ORDER BY timestamp DESC LIMIT 1
+        WHERE question_id = ?
+        ORDER BY timestamp DESC LIMIT 1
     """, (qid,))
     row = cursor.fetchone()
     conn.close()
     return row if row else (None, None)
 
-# === UI ===
+# === Coach Chat UI ===
 def run_coach_chat_view():
-    st.title("🧑‍🏫 AI 教練互動")
-    st.markdown("請輸入你對某一題的疑問、錯誤原因或想請教 AI 老師的地方 👇")
+    st.title("🧑‍🏫 AI 教練互動 - 多輪版 (Chat UI)")
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+        st.session_state.chat_round = 0
 
-    # 教練風格選擇
     style = st.selectbox("教練回應風格：", ["🧭 引導式（預設）", "🔍 診斷式", "📚 延伸補充"])
 
-    # 題目選擇（包含最近錯題）
     recent_wrong_qids = get_recent_wrong_qids()
     options = [""] + recent_wrong_qids
-    selected_qid = st.selectbox("（可選）從最近錯題選擇要討論的題號：", options=options)
+    selected_qid = st.selectbox("（可選）從最近錯題選擇題號：", options=options)
 
-    with st.form("chat_form"):
-        user_input = st.text_area("你想問什麼？", height=150)
-        submitted = st.form_submit_button("送出問題")
+    question_info = None
+    if selected_qid:
+        question_info = get_question_text_by_id(selected_qid)
+        if question_info:
+            with st.expander("📚 題目內容（供參考）"):
+                st.markdown(f"**題目**：{question_info['題幹']}")
+                for k, v in question_info['選項'].items():
+                    st.markdown(f"({k}) {v}")
+                show_answer = st.checkbox("顯示正確答案", value=False)
+                if show_answer:
+                    st.caption(f"✅ 本題正確答案：{question_info['正解']}")
 
-    if submitted and user_input.strip():
-        # 題目上下文（如有）
-        qtext = ""
-        if selected_qid:
-            q = get_question_by_id(selected_qid)
-            if q:
-                qtext = f"""
-【題目】
-{q['題幹']}
-
-【選項】
-""" + "\n".join([f"({k}) {v}" for k, v in q['選項'].items()])
-        student_ans, correct_ans = get_student_answer_and_truth(selected_qid) if selected_qid else (None, None)
-
+    if prompt := st.chat_input("請輸入想問AI教練的內容..."):
         summary = StudentModel().export_summary()
         summary_text = json.dumps(summary, ensure_ascii=False, indent=2)
 
-        # 組合 prompt
-        parts = []
-        if qtext:
-            parts.append(qtext)
-        if student_ans and correct_ans:
-            parts.append(f"【學生作答】選了 {student_ans}，正確答案是 {correct_ans}")
-        parts.append(f"【學生說明】\n{user_input}")
-        parts.append(f"【學生近期摘要】\n{summary_text}")
-        full_prompt = "\n\n".join(parts)
+        prompt_parts = []
+        if question_info:
+            prompt_parts.append(f"【題目】\n{question_info['題幹']}\n\n【選項】\n(A) {question_info['選項']['A']}\n(B) {question_info['選項']['B']}\n(C) {question_info['選項']['C']}\n(D) {question_info['選項']['D']}\n【正確答案】{question_info['正解']}")
+        prompt_parts.append(f"【學生說明】\n{prompt}")
+        prompt_parts.append(f"【學生近期摘要】\n{summary_text}")
+        prompt_parts.append(f"【教練風格】{style}")
 
-        # 選擇對應 agent
-        if "診斷" in style:
-            agent = diagnose_agent
-        elif "補充" in style:
-            agent = extend_agent
-        else:
-            agent = guide_agent
+        full_prompt = "\n\n".join(prompt_parts)
 
-        st.session_state.chat_history.append(("你", user_input))
-        with st.spinner("AI 教練回應中..."):
-            result = asyncio.run(Runner.run(agent, input=full_prompt))
-            st.session_state.chat_history.append(("AI 教練", result.final_output))
+        st.session_state.chat_history.append(("你", prompt))
 
+        with st.spinner("AI 教練思考中..."):
+            result = asyncio.run(Runner.run(coach_agent, input=full_prompt))
+            response = result.final_output.strip()
+            st.session_state.chat_history.append(("AI 教練", response))
+
+        st.session_state.chat_round += 1
+
+    # 顯示聊天氣泡
     for speaker, msg in st.session_state.chat_history:
-        if speaker == "你":
-            st.markdown(f"**🧑‍🎓 你：** {msg}")
-        else:
-            st.markdown(f"**🤖 AI 教練：** {msg}")
+        with st.chat_message("user" if speaker == "你" else "assistant"):
+            st.markdown(msg)
+
+    if st.session_state.chat_round >= 3:
+        st.success("🎯 已達三輪討論，自動結束此次互動，請重新開始新的提問！")
+        if st.button("🔄 重新開始新的互動"):
+            st.session_state.chat_history = []
+            st.session_state.chat_round = 0

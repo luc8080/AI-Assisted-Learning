@@ -3,7 +3,6 @@ from assistant_core.explain_question import explain_question
 from data_store.question_loader import get_random_question, get_question_by_id
 from models.student_model import StudentModel
 from assistant_core.feedback.multi_feedback_agents import run_agent_discussion
-from assistant_core.recommendation.recommend_next_question import recommend_next_question_by_topic
 import sqlite3
 from datetime import datetime
 import json
@@ -18,16 +17,23 @@ def save_log(qid, student_ans, correct_ans):
         CREATE TABLE IF NOT EXISTS answer_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
+            user_id INTEGER,
             question_id TEXT,
             student_answer TEXT,
             correct_answer TEXT,
             is_correct INTEGER
         )
     """)
+    cursor.execute("SELECT id FROM users WHERE username = ?", (st.session_state.username,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return
+    user_id = row[0]
     cursor.execute("""
-        INSERT INTO answer_log (timestamp, question_id, student_answer, correct_answer, is_correct)
-        VALUES (?, ?, ?, ?, ?)
-    """, (datetime.now().isoformat(), qid, student_ans, correct_ans, int(student_ans == correct_ans)))
+        INSERT INTO answer_log (timestamp, user_id, question_id, student_answer, correct_answer, is_correct)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (datetime.now().isoformat(), user_id, qid, student_ans, correct_ans, int(student_ans == correct_ans)))
     conn.commit()
     conn.close()
 
@@ -35,7 +41,6 @@ def save_log(qid, student_ans, correct_ans):
 def run_task_view():
     st.header("📝 素養題作答任務")
 
-    # ✅ 判斷是否來自錯題本跳轉
     if "from_wrongbook" in st.session_state:
         qid = st.session_state.pop("from_wrongbook")
         st.session_state.current_question = get_question_by_id(qid)
@@ -92,18 +97,6 @@ def run_task_view():
         import asyncio
         asyncio.run(run_agent_discussion(st.session_state.prompt, streamlit_container=st))
 
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("➡️ 下一題"):
-            st.session_state.current_question = get_random_question()
-            st.rerun()
-
-    with col2:
-        if st.button("🔁 推薦再練一題"):
-            q = recommend_next_question_by_topic()
-            if q:
-                st.session_state.current_question = q
-                st.success(f"推薦題號 {q['題號']}，主題：{q['主題']}")
-                st.rerun()
-            else:
-                st.warning("目前沒有可推薦的同主題題目。")
+    if st.button("下一題"):
+        st.session_state.current_question = get_random_question()
+        st.rerun()
