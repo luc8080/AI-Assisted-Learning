@@ -1,0 +1,6 @@
+streamlit
+pandas
+plotly
+openai-agents
+PyPDF2
+python-dotenv

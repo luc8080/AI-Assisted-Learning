@@ -1,0 +1,20 @@
+learning_assistant/
+├── main.py                     # Streamlit App 主入口
+├── assistant_core/             # 所有 AI Agent 行為定義
+│   ├── explain_question.py         # 題目解析
+│   ├── give_feedback.py           # 答題回饋建議
+│   ├── rewrite_text.py            # 文本翻譯或解釋
+│   ├── plan_next_task.py          # 出下一題邏輯
+├── data_store/                # 資料儲存層
+│   ├── question_bank.sqlite       # 題庫
+│   ├── user_log.sqlite            # 學習紀錄
+├── interface/                 # 使用者互動層
+│   ├── task_view.py               # 出題、作答、回饋
+│   ├── summary_view.py            # 歷程查詢與個人學習頁
+├── helpers/                   # 工具集
+│   ├── parse_pdf.py              # 歷屆試題轉 JSON
+│   ├── prompt_templates.py       # prompt 模板集中管理
+├── .env
+└── requirements.txt
+
+zip -r learning_assistant_clean.zip learning_assistant -x "*/.*" "*/_*"
