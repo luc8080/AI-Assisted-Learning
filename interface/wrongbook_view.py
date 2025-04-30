@@ -35,20 +35,20 @@ def show_question_detail(row):
     for k, v in question['選項'].items():
         st.markdown(f"({k}) {v}")
 
-    st.markdown(f"✅ 正確答案：{row['correct_answer']}")
-    st.markdown(f"🧍‍♂️ 你的答案：{row['student_answer']}")
+    st.markdown(f"正確答案：{row['correct_answer']}")
+    st.markdown(f"你的答案：{row['student_answer']}")
 
-    if st.button(f"🔁 重新挑戰 {row['question_id']}"):
+    if st.button(f"重新挑戰 {row['question_id']}"):
         st.session_state.from_wrongbook = row["question_id"]
         st.rerun()
 
-    note = st.text_area("✏️ 加入筆記（可選）：", key=f"note_{row['id']}")
-    if st.button("💾 儲存筆記", key=f"save_{row['id']}"):
+    note = st.text_area("加入筆記（可選）：", key=f"note_{row['id']}")
+    if st.button("儲存筆記", key=f"save_{row['id']}"):
         st.success("（模擬）筆記已儲存")
 
 # 主錯題本頁面
 def run_wrongbook_view():
-    st.header("❌ 我的錯題本")
+    st.header("我的錯題本")
     df = get_wrong_answers()
 
     if df.empty:

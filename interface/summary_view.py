@@ -53,7 +53,7 @@ def get_all_logs():
     return df
 
 def run_summary_view():
-    st.header("📊 學習歷程紀錄")
+    st.header("學習歷程紀錄")
     init_db()
     df = get_all_logs()
 
@@ -61,9 +61,9 @@ def run_summary_view():
         st.info("尚未有任何作答紀錄。")
         return
 
-    df['is_correct'] = df['is_correct'].map({1: '✔️ 正確', 0: '❌ 錯誤'})
+    df['is_correct'] = df['is_correct'].map({1: '正確', 0: '錯誤'})
     df['timestamp'] = pd.to_datetime(df['timestamp'])
-    st.subheader("📝 作答紀錄")
+    st.subheader("作答紀錄")
     st.dataframe(df.rename(columns={
         'timestamp': '作答時間',
         'question_id': '題號',
@@ -72,7 +72,7 @@ def run_summary_view():
         'is_correct': '結果'
     }), use_container_width=True)
 
-    st.subheader("📈 每日正確率趨勢")
+    st.subheader("每日正確率趨勢")
     df_chart = df.copy()
     df_chart['date'] = df_chart['timestamp'].dt.date
     trend = df_chart.groupby('date')['is_correct'].apply(lambda x: (x == '✔️ 正確').mean()).reset_index()
@@ -81,18 +81,18 @@ def run_summary_view():
     fig.update_layout(yaxis_tickformat=".0%", height=400)
     st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("🎯 作答結果分布")
+    st.subheader("作答結果分布")
     pie_data = df['is_correct'].value_counts().reset_index()
     pie_data.columns = ['結果', '數量']
     fig2 = px.pie(pie_data, values='數量', names='結果', hole=0.4)
     st.plotly_chart(fig2, use_container_width=True)
 
-    st.subheader("📄 個人學習摘要 + 主題診斷")
+    st.subheader("個人學習摘要 + 主題診斷")
     model = StudentModel()
     summary = model.export_summary()
     st.json(summary)
 
-    st.subheader("📚 錯題主題分布圖")
+    st.subheader("錯題主題分布圖")
     topic_stats = model.get_wrong_topic_distribution()
     if topic_stats:
         df_topic = pd.DataFrame(list(topic_stats.items()), columns=["主題", "錯題數"])
@@ -101,8 +101,8 @@ def run_summary_view():
     else:
         st.info("目前無可統計的錯題主題資料")
 
-    st.subheader("🤖 AI 總結建議")
-    if st.button("📩 產生 AI 回饋建議"):
+    st.subheader("AI 總結建議")
+    if st.button("產生 AI 回饋建議"):
         prompt = json.dumps({
             "學習摘要": summary,
             "主題錯誤分布": topic_stats

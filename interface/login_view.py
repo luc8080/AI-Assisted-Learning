@@ -18,7 +18,7 @@ def load_users():
     return users_dict
 
 def run_login_view():
-    st.title("🔐 登入系統")
+    st.title("登入系統")
 
     users = load_users()
 

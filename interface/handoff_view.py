@@ -3,7 +3,7 @@ from assistant_core.strategies.handoff_workflow import run_handoff_workflow
 import asyncio
 
 def run_handoff_view():
-    st.title("🧠 AI 學習診斷與回饋分流")
+    st.title("AI 學習診斷與回饋分流")
 
     sample_prompt = """
 學生選擇：C

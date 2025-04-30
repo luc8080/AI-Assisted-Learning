@@ -80,13 +80,13 @@ def get_student_answer_and_truth(qid):
 
 # === Coach Chat UI ===
 def run_coach_chat_view():
-    st.title("🧑‍🏫 AI 教練互動 - 多輪版 (Chat UI)")
+    st.title("AI 教練互動 - 多輪版 (Chat UI)")
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
         st.session_state.chat_round = 0
 
-    style = st.selectbox("教練回應風格：", ["🧭 引導式（預設）", "🔍 診斷式", "📚 延伸補充"])
+    style = st.selectbox("教練回應風格：", ["引導式（預設）", "診斷式", "延伸補充"])
 
     recent_wrong_qids = get_recent_wrong_qids()
     options = [""] + recent_wrong_qids
@@ -96,13 +96,13 @@ def run_coach_chat_view():
     if selected_qid:
         question_info = get_question_text_by_id(selected_qid)
         if question_info:
-            with st.expander("📚 題目內容（供參考）"):
+            with st.expander("題目內容（供參考）"):
                 st.markdown(f"**題目**：{question_info['題幹']}")
                 for k, v in question_info['選項'].items():
                     st.markdown(f"({k}) {v}")
                 show_answer = st.checkbox("顯示正確答案", value=False)
                 if show_answer:
-                    st.caption(f"✅ 本題正確答案：{question_info['正解']}")
+                    st.caption(f"本題正確答案：{question_info['正解']}")
 
     if prompt := st.chat_input("請輸入想問AI教練的內容..."):
         summary = StudentModel().export_summary()
@@ -132,7 +132,7 @@ def run_coach_chat_view():
             st.markdown(msg)
 
     if st.session_state.chat_round >= 3:
-        st.success("🎯 已達三輪討論，自動結束此次互動，請重新開始新的提問！")
-        if st.button("🔄 重新開始新的互動"):
+        st.success("已達三輪討論，自動結束此次互動，請重新開始新的提問！")
+        if st.button("重新開始新的互動"):
             st.session_state.chat_history = []
             st.session_state.chat_round = 0

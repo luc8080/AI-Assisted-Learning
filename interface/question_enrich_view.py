@@ -8,7 +8,7 @@ from assistant_core.populate_keywords import populate_keywords
 
 # === 題庫增補工具 ===
 def run_question_enrich_view():
-    st.header("🧠 題庫增補工具（AI 輔助段落與關鍵詞）")
+    st.header("題庫增補工具（AI 輔助段落與關鍵詞）")
 
     conn = sqlite3.connect("data_store/question_bank.sqlite")
     cursor = conn.cursor()
@@ -23,13 +23,13 @@ def run_question_enrich_view():
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📚 補齊段落欄位"):
+        if st.button("補齊段落欄位"):
             with st.spinner("段落補齊中..."):
                 u, f = populate_paragraphs()
                 st.success(f"段落補齊完成：{u} 題成功、{f} 題失敗")
 
     with col2:
-        if st.button("🔖 補齊關鍵詞欄位"):
+        if st.button("補齊關鍵詞欄位"):
             with st.spinner("關鍵詞補齊中..."):
                 u, f = populate_keywords()
                 st.success(f"關鍵詞補齊完成：{u} 題成功、{f} 題失敗")

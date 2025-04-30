@@ -77,10 +77,10 @@ def classify_and_update_questions(db_path="data_store/question_bank.sqlite"):
                         time.sleep(6)
                         continue
                     else:
-                        print(f"❌ 題號 {qid} 分類失敗：{inner}")
+                        print(f"題號 {qid} 分類失敗：{inner}")
                         failed += 1
         except Exception as e:
-            print(f"⚠️ 未預期錯誤（題號 {qid}）：{e}")
+            print(f"未預期錯誤（題號 {qid}）：{e}")
             failed += 1
 
     conn.commit()
@@ -89,7 +89,7 @@ def classify_and_update_questions(db_path="data_store/question_bank.sqlite"):
 
 # === Streamlit UI ===
 def run_topic_classify_view():
-    st.header("🧠 題目主題分類工具（AI 協助）")
+    st.header("題目主題分類工具（AI 協助）")
 
     conn = sqlite3.connect("data_store/question_bank.sqlite")
     cursor = conn.cursor()
@@ -99,7 +99,7 @@ def run_topic_classify_view():
         import pandas as pd
         import plotly.express as px
         df = pd.read_sql_query("SELECT topic, COUNT(*) as count FROM questions GROUP BY topic", conn)
-        fig = px.bar(df, x="topic", y="count", title="📊 現有主題分布統計圖", labels={"topic": "主題", "count": "題數"})
+        fig = px.bar(df, x="topic", y="count", title="現有主題分布統計圖", labels={"topic": "主題", "count": "題數"})
         st.plotly_chart(fig, use_container_width=True)
     except Exception as e:
         st.warning(f"無法繪製統計圖：{e}")
@@ -108,9 +108,9 @@ def run_topic_classify_view():
     count = cursor.fetchone()[0]
     st.info(f"目前資料庫中共有 {count} 題尚未分類或為 '待分類'")
 
-    if st.button("🚀 啟動分類任務"):
+    if st.button("啟動分類任務"):
         with st.spinner("AI 分類進行中，請稍候..."):
             classified, failed = classify_and_update_questions()
-        st.success(f"✅ 已完成 {classified} 題分類，失敗 {failed} 題")
+        st.success(f"已完成 {classified} 題分類，失敗 {failed} 題")
 
     conn.close()

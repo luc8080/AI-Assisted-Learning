@@ -39,7 +39,7 @@ def save_log(qid, student_ans, correct_ans):
 
 # === 單題作答與解析任務畫面 ===
 def run_task_view():
-    st.header("📝 素養題作答任務")
+    st.header("素養題作答任務")
 
     if "from_wrongbook" in st.session_state:
         qid = st.session_state.pop("from_wrongbook")
@@ -61,9 +61,9 @@ def run_task_view():
         save_log(q['題號'], student_answer, q['正解'])
 
         if is_correct:
-            st.success(f"✔️ 答對了！")
+            st.success(f"答對了！")
         else:
-            st.error(f"❌ 答錯了，正確答案是：{q['正解']}")
+            st.error(f"答錯了，正確答案是：{q['正解']}")
 
         model = StudentModel()
         summary = model.export_summary()
@@ -84,7 +84,7 @@ def run_task_view():
 """
 
         st.markdown("---")
-        st.subheader("🤖 AI 教學多觀點回饋")
+        st.subheader("AI 教學多觀點回饋")
         st.markdown("(系統將自動整合三位 AI 教師建議，最後提供一段重點回饋)")
         st.markdown("---")
 
