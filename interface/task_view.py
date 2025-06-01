@@ -1,5 +1,6 @@
+# 檔案路徑：interface/task_view.py
+
 import streamlit as st
-from assistant_core.explain_question import explain_question
 from data_store.question_loader import get_random_question, get_question_by_id
 from models.student_model import StudentModel
 from assistant_core.feedback.multi_feedback_agents import run_agent_discussion
@@ -7,23 +8,11 @@ import sqlite3
 from datetime import datetime
 import json
 
-DB_PATH = "data_store/user_log.sqlite"
+LOG_DB_PATH = "data_store/user_log.sqlite"
 
-# 儲存作答紀錄到 SQLite
-def save_log(qid, student_ans, correct_ans):
-    conn = sqlite3.connect(DB_PATH)
+def save_log(qid, student_ans, correct_ans, group_id=None, sub_id=None):
+    conn = sqlite3.connect(LOG_DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS answer_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            user_id INTEGER,
-            question_id TEXT,
-            student_answer TEXT,
-            correct_answer TEXT,
-            is_correct INTEGER
-        )
-    """)
     cursor.execute("SELECT id FROM users WHERE username = ?", (st.session_state.username,))
     row = cursor.fetchone()
     if not row:
@@ -31,72 +20,114 @@ def save_log(qid, student_ans, correct_ans):
         return
     user_id = row[0]
     cursor.execute("""
-        INSERT INTO answer_log (timestamp, user_id, question_id, student_answer, correct_answer, is_correct)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (datetime.now().isoformat(), user_id, qid, student_ans, correct_ans, int(student_ans == correct_ans)))
+        INSERT INTO answer_log (timestamp, user_id, question_id, student_answer, correct_answer, is_correct, group_id, sub_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (datetime.now().isoformat(), user_id, qid, student_ans, correct_ans, int(student_ans == correct_ans), group_id, sub_id))
     conn.commit()
     conn.close()
 
-# === 單題作答與解析任務畫面 ===
 def run_task_view():
     st.header("素養題作答任務")
 
+    # 題庫載入判斷
     if "from_wrongbook" in st.session_state:
         qid = st.session_state.pop("from_wrongbook")
         st.session_state.current_question = get_question_by_id(qid)
+        st.session_state.current_group_progress = None
 
     if "current_question" not in st.session_state:
         st.session_state.current_question = get_random_question()
+        st.session_state.current_group_progress = None
 
-    q = st.session_state.current_question
+    q = st.session_state.get("current_question")
+    if not q:
+        st.warning("找不到可作答題目，請聯絡管理員補充題庫。")
+        return
 
-    st.markdown(f"**題號：** {q['題號']}")
-    st.markdown(f"**題目：** {q['題幹']}")
+    # 單題模式
+    if q.get("type") == "single":
+        _show_single_question(q)
+    # 題組模式
+    elif q.get("type") == "group":
+        if "current_group_progress" not in st.session_state or st.session_state.current_group_progress is None:
+            st.session_state.current_group_progress = 0
+        questions = q["questions"]
+        total_subs = len(questions)
+        idx = st.session_state.current_group_progress
 
-    student_answer = st.radio("請選出你認為最適當的選項：", options=list(q['選項'].keys()),
-                               format_func=lambda x: f"({x}) {q['選項'][x]}")
+        st.markdown(f"**[題組] {q.get('title','')}**")
+        st.markdown(f"**主題/分類：** {q.get('category', '')}")
+        st.info(f"閱讀文本：\n{q['reading_text']}")
+        st.markdown(f"---\n**小題 {idx+1} / {total_subs}**")
+        subq = questions[idx]
+        _show_single_question(subq, group=q, group_sub_idx=idx)
 
-    if st.button("提交作答並獲得解析"):
-        is_correct = student_answer == q['正解']
-        save_log(q['題號'], student_answer, q['正解'])
+        # 下一小題/結束題組
+        if st.session_state.get("show_next_group_subq_btn"):
+            if idx + 1 < total_subs:
+                if st.button("下一小題"):
+                    st.session_state.current_group_progress += 1
+                    st.session_state.show_next_group_subq_btn = False
+                    st.rerun()
+            else:
+                if st.button("完成本題組，進入新題目"):
+                    st.session_state.current_question = get_random_question()
+                    st.session_state.current_group_progress = None
+                    st.session_state.show_next_group_subq_btn = False
+                    st.rerun()
+    # 題組小題（直接用id查）模式
+    elif q.get("type") == "group_sub":
+        group = {
+            "title": q.get("group_title", ""),
+            "category": q.get("category", ""),
+            "reading_text": q.get("reading_text", "")
+        }
+        _show_single_question(q, group=group, group_sub_idx=None)
+    else:
+        st.error("題庫結構錯誤或不支援的題型。")
 
+# ========== 單題顯示與作答（含題組子題） ==========
+def _show_single_question(q, group=None, group_sub_idx=None):
+    # 決定正確的題號 (單題用題號、題組小題用 sub_id)
+    qid = q.get('題號') or q.get('sub_id')
+    st.markdown(f"**題號：** {qid}")
+    if group:
+        st.markdown(f"**所屬題組：** {group.get('title','')}")
+    st.markdown(f"**題目：** {q.get('題幹','（缺題幹）')}")
+    options = q.get('選項')
+    if not isinstance(options, dict) or not options:
+        st.error("選項資料異常，請聯絡管理員檢查題庫。")
+        return
+    correct_ans = q.get('正解') or q.get('answer')
+    student_answer = st.radio(
+        "請選出你認為最適當的選項：",
+        options=list(options.keys()),
+        format_func=lambda x: f"({x}) {options[x]}"
+    )
+
+    # 只顯示正確/錯誤，不直接顯示AI解析
+    if st.button("提交作答", key=f"submit_{qid}"):
+        group_id = group.get('group_id') if group else None
+        sub_id = q.get('sub_id') if 'sub_id' in q else None
+        save_log(qid, student_answer, correct_ans, group_id, sub_id)
+
+        is_correct = student_answer == correct_ans
         if is_correct:
-            st.success(f"答對了！")
+            st.success("答對了！")
         else:
-            st.error(f"答錯了，正確答案是：{q['正解']}")
+            st.error(f"答錯了，正確答案是：{correct_ans}")
 
-        model = StudentModel()
-        summary = model.export_summary()
-        model.close()
+        # === 展開解析按鈕（資料庫有才顯示） ===
+        explanation = q.get("解析") or q.get("explanation")
+        if explanation and explanation.strip():
+            with st.expander("點此展開解析"):
+                st.markdown(explanation)
 
-        prompt = f"""
-【題目】
-{q['題幹']}
+        # 顯示下一題/下一小題按鈕
+        st.session_state.show_next_group_subq_btn = True
 
-【選項】
-{chr(10).join([f"({k}) {v}" for k, v in q['選項'].items()])}
-
-【正確答案】{q['正解']}
-【學生答案】{student_answer}
-
-【學生近期學習摘要】
-{json.dumps(summary, ensure_ascii=False, indent=2)}
-"""
-
-        st.markdown("---")
-        st.subheader("AI 教學多觀點回饋")
-        st.markdown("(系統將自動整合三位 AI 教師建議，最後提供一段重點回饋)")
-        st.markdown("---")
-
-        st.session_state.prompt = prompt
-        st.session_state.run_multi_feedback = True
-
-    if st.session_state.get("run_multi_feedback"):
-        st.session_state.run_multi_feedback = False
-        st.markdown("<div id='multi-agent-discussion'></div>", unsafe_allow_html=True)
-        import asyncio
-        asyncio.run(run_agent_discussion(st.session_state.prompt, streamlit_container=st))
-
-    if st.button("下一題"):
-        st.session_state.current_question = get_random_question()
-        st.rerun()
+    # 單題時才顯示「下一題」
+    if not group:
+        if st.button("下一題"):
+            st.session_state.current_question = get_random_question()
+            st.rerun()

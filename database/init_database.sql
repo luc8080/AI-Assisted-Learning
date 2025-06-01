@@ -1,40 +1,38 @@
--- 建立 answer_log 作答紀錄表
-CREATE TABLE IF NOT EXISTS answer_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp TEXT NOT NULL,
-    user_id INTEGER NOT NULL,
-    question_id TEXT NOT NULL,
-    student_answer TEXT NOT NULL,
-    correct_answer TEXT NOT NULL,
-    is_correct INTEGER NOT NULL,
-    FOREIGN KEY(user_id) REFERENCES users(id)
+\-- 檔案路徑：learning\_assistant/database/init\_database.sql
+
+\-- 題組主表 (閱讀文本)
+CREATE TABLE IF NOT EXISTS question\_groups (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+title TEXT,
+reading\_text TEXT,
+category TEXT
 );
 
--- 建立 questions 題庫資料表
+\-- 子題/單題表
 CREATE TABLE IF NOT EXISTS questions (
-    id TEXT PRIMARY KEY,
-    source TEXT,
-    stem TEXT,
-    option_a TEXT,
-    option_b TEXT,
-    option_c TEXT,
-    option_d TEXT,
-    answer TEXT,
-    topic TEXT,
-    paragraph TEXT,
-    keywords TEXT
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+group\_id INTEGER,
+content TEXT NOT NULL,
+answer TEXT,
+explanation TEXT,
+topic TEXT,
+difficulty INTEGER,
+question\_type TEXT,
+FOREIGN KEY(group\_id) REFERENCES question\_groups(id)
 );
 
--- 建立 users 使用者表
+\-- 其餘用戶與錯題表
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('student', 'teacher', 'admin'))
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+username TEXT NOT NULL UNIQUE,
+password TEXT NOT NULL
 );
 
--- 插入預設帳號（若不存在）
-INSERT OR IGNORE INTO users (username, password_hash, role) VALUES
-('student1', '$2b$12$6MTe9X/WWTJ4PRzO6mVncO.kAKiJ0JHExMJACknNF3BKMK7M0E4J6', 'student'), -- 密碼：123456
-('teacher1', '$2b$12$6MTe9X/WWTJ4PRzO6mVncO.kAKiJ0JHExMJACknNF3BKMK7M0E4J6', 'teacher'), -- 密碼：123456
-('admin',    '$2b$12$9b2eYfZm0gpD2MyY5vWXRO0R7ylH0aTUN.ZD7uCdaRxzBlqz6W03S', 'admin');    -- 密碼：adminpass
+CREATE TABLE IF NOT EXISTS wrongbook (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+user\_id INTEGER,
+question\_id INTEGER,
+note TEXT,
+FOREIGN KEY(user\_id) REFERENCES users(id),
+FOREIGN KEY(question\_id) REFERENCES questions(id)
+);

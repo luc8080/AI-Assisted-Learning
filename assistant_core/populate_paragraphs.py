@@ -1,11 +1,13 @@
+# 檔案路徑：assistant_core/populate_paragraphs.py
+
 import sqlite3
 import os
-import time
-import asyncio
 from dotenv import load_dotenv
-from agents import Agent, OpenAIChatCompletionsModel, AsyncOpenAI, Runner
+from agents import Agent, AsyncOpenAI, OpenAIChatCompletionsModel, Runner
 
-# === 初始化 Gemini 模型 ===
+DB_PATH = "data_store/question_bank.sqlite"
+
+# === 初始化 LLM/Agent ===
 load_dotenv()
 client = AsyncOpenAI(
     base_url=os.getenv("GOOGLE_GEMINI_ENDPOINT"),
@@ -15,44 +17,44 @@ model = OpenAIChatCompletionsModel(
     model="gemini-2.0-flash",
     openai_client=client
 )
-
-# === 建立段落標題 Agent ===
 paragraph_agent = Agent(
-    name="ParagraphTagger",
+    name="ParagraphAgent",
     instructions="""
-你是一位國文教師，負責根據題幹與出處判斷該題所屬段落標題。
-請回覆簡潔段落名稱，例如：「材論第一段」、「師說末段」，或「未知」。
-請只回傳段落名稱字串。
+你是一位國文素養導向題命題老師，請根據題幹，產生一段100字以內、能作為該題閱讀背景素材的現代語境短文。
+內容需自然且具有閱讀素養風格，不可抄題幹內容。
 """,
     model=model
 )
 
-# === 補齊段落欄位 ===
-def populate_paragraphs(db_path="data_store/question_bank.sqlite"):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, source, stem FROM questions WHERE paragraph IS NULL OR paragraph = ''")
-    rows = cursor.fetchall()
+def populate_paragraphs():
+    # Event loop 保險，防止 "no current event loop" 問題
+    import asyncio
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
 
-    updated = 0
-    failed = 0
-    for qid, source, stem in rows:
-        prompt = f"出處：{source}\n題幹：{stem}"
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    # 只取沒有 paragraph 或為空的題目
+    cursor.execute("SELECT id, content FROM questions WHERE paragraph IS NULL OR paragraph = ''")
+    rows = cursor.fetchall()
+    updated, failed = 0, 0
+
+    for qid, content in rows:
+        prompt = f"請根據下列題目內容，補充一段適合作為素養閱讀素材的背景短文（100字內）：\n{content}"
         try:
-            result = asyncio.run(Runner.run(paragraph_agent, input=prompt))
-            time.sleep(3)
+            result = Runner.run_sync(paragraph_agent, input=prompt)
             paragraph = result.final_output.strip()
-            cursor.execute("UPDATE questions SET paragraph = ? WHERE id = ?", (paragraph, qid))
-            updated += 1
+            if paragraph:
+                cursor.execute("UPDATE questions SET paragraph = ? WHERE id = ?", (paragraph, qid))
+                updated += 1
+            else:
+                failed += 1
         except Exception as e:
-            print(f"❌ 題號 {qid} 補段落失敗：{e}")
             failed += 1
+            print(f"補齊段落失敗（題號 {qid}）：{e}")
 
     conn.commit()
     conn.close()
     return updated, failed
-
-# 測試入口
-if __name__ == "__main__":
-    u, f = populate_paragraphs()
-    print(f"✅ 段落補齊完成 {u} 題，失敗 {f} 題")

@@ -1,138 +1,166 @@
+# 檔案路徑：interface/coach_chat_view.py
+
 import streamlit as st
 import sqlite3
 import json
-import os
 import asyncio
-from dotenv import load_dotenv
-from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel
 from models.student_model import StudentModel
+from assistant_core.coach_agent import run_coach_dialogue
 
-# === 初始化 Gemini 模型 ===
-load_dotenv()
-client = AsyncOpenAI(
-    base_url=os.getenv("GOOGLE_GEMINI_ENDPOINT"),
-    api_key=os.getenv("GOOGLE_GEMINI_API_KEY")
-)
-model = OpenAIChatCompletionsModel(
-    model="gemini-2.0-flash",
-    openai_client=client
-)
-
-# === 教練型 Agent（優化版，多輪版） ===
-coach_agent = Agent(
-    name="InteractiveCoach",
-    instructions="""
-你是一位親切且善於引導學生深入思考的 AI 國文老師。
-請務必根據提供的題目內容、選項、正確答案與學生作答資訊，進行精確且具依據的回覆。
-回覆時請遵守以下規則：
-- 必須引用題目或選項的原文字句作為依據，禁止編造未提供的內容。
-- 必須清楚說明為何正確答案正確，以及學生的誤選可能原因。
-- 回覆格式必須分為兩段：【回覆】與【反問】。
-- 每輪討論請結尾提出一個簡單問題，引導學生再思考。
-- 當達到第 3 輪時，請自動收斂並給予完整鼓勵性建議，結束互動。
-""",
-    model=model
-)
-
-# === 從資料庫取得題目內容 ===
-def get_question_text_by_id(qid):
+# === 取得題目完整內容（含閱讀素材、選項）===
+def get_question_info_by_id(qid):
     conn = sqlite3.connect("data_store/question_bank.sqlite")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM questions WHERE id = ?", (qid,))
+    cursor.execute("""
+        SELECT q.id, q.content, q.options, q.answer, q.paragraph, g.reading_text, g.title
+        FROM questions q
+        LEFT JOIN question_groups g ON q.group_id = g.id
+        WHERE q.id = ?
+    """, (qid,))
     row = cursor.fetchone()
     conn.close()
     if not row:
         return None
+    qid, content, options_json, answer, paragraph, reading_text, group_title = row
+    try:
+        options = json.loads(options_json) if options_json else {}
+    except Exception:
+        options = {}
     return {
-        "題號": row[0],
-        "出處": row[1],
-        "題幹": row[2],
-        "選項": {"A": row[3], "B": row[4], "C": row[5], "D": row[6]},
-        "正解": row[7]
+        "題號": qid,
+        "題幹": content,
+        "選項": options,
+        "正解": answer,
+        "閱讀素材": reading_text or paragraph or "",
+        "題組名稱": group_title or ""
     }
 
 # === 取得最近錯題題號 ===
-def get_recent_wrong_qids(limit=10):
+def get_recent_wrong_qids(limit=10, username=None):
     conn = sqlite3.connect("data_store/user_log.sqlite")
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT DISTINCT question_id FROM answer_log
-        WHERE is_correct = 0
-        ORDER BY timestamp DESC
-        LIMIT ?
-    """, (limit,))
+    if username:
+        cursor.execute("""
+            SELECT DISTINCT question_id FROM answer_log
+            JOIN users ON users.id = answer_log.user_id
+            WHERE is_correct = 0 AND users.username = ?
+            ORDER BY timestamp DESC LIMIT ?
+        """, (username, limit))
+    else:
+        cursor.execute("""
+            SELECT DISTINCT question_id FROM answer_log
+            WHERE is_correct = 0
+            ORDER BY timestamp DESC LIMIT ?
+        """, (limit,))
     rows = cursor.fetchall()
     conn.close()
     return [str(row[0]) for row in rows]
 
 # === 取得該題的學生作答與正解 ===
-def get_student_answer_and_truth(qid):
+def get_student_answer_and_truth(qid, username=None):
     conn = sqlite3.connect("data_store/user_log.sqlite")
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT student_answer, correct_answer FROM answer_log
-        WHERE question_id = ?
-        ORDER BY timestamp DESC LIMIT 1
-    """, (qid,))
+    if username:
+        cursor.execute("""
+            SELECT student_answer, correct_answer FROM answer_log
+            JOIN users ON users.id = answer_log.user_id
+            WHERE question_id = ? AND users.username = ?
+            ORDER BY timestamp DESC LIMIT 1
+        """, (qid, username))
+    else:
+        cursor.execute("""
+            SELECT student_answer, correct_answer FROM answer_log
+            WHERE question_id = ?
+            ORDER BY timestamp DESC LIMIT 1
+        """, (qid,))
     row = cursor.fetchone()
     conn.close()
     return row if row else (None, None)
 
-# === Coach Chat UI ===
+# === 主 coach chat 互動介面 ===
 def run_coach_chat_view():
-    st.title("AI 教練互動 - 多輪版 (Chat UI)")
+    st.title("AI 教練互動 - 多輪精準個別化對話")
 
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-        st.session_state.chat_round = 0
+    # 狀態初始化
+    if "coach_chat_history" not in st.session_state:
+        st.session_state.coach_chat_history = []
+        st.session_state.coach_chat_round = 0
+        st.session_state.coach_last_qinfo = None
+        st.session_state.coach_last_student_ans = None
 
-    style = st.selectbox("教練回應風格：", ["引導式（預設）", "診斷式", "延伸補充"])
+    username = st.session_state.get("username", None)
 
-    recent_wrong_qids = get_recent_wrong_qids()
+    # 選題（可帶出最近錯題）
+    recent_wrong_qids = get_recent_wrong_qids(username=username)
     options = [""] + recent_wrong_qids
     selected_qid = st.selectbox("（可選）從最近錯題選擇題號：", options=options)
 
     question_info = None
-    if selected_qid:
-        question_info = get_question_text_by_id(selected_qid)
-        if question_info:
-            with st.expander("題目內容（供參考）"):
-                st.markdown(f"**題目**：{question_info['題幹']}")
-                for k, v in question_info['選項'].items():
-                    st.markdown(f"({k}) {v}")
-                show_answer = st.checkbox("顯示正確答案", value=False)
-                if show_answer:
-                    st.caption(f"本題正確答案：{question_info['正解']}")
+    student_ans, correct_ans = None, None
 
-    if prompt := st.chat_input("請輸入想問AI教練的內容..."):
+    if selected_qid:
+        question_info = get_question_info_by_id(selected_qid)
+        student_ans, correct_ans = get_student_answer_and_truth(selected_qid, username=username)
+        st.session_state.coach_last_qinfo = question_info
+        st.session_state.coach_last_student_ans = student_ans
+
+        # 顯示題目內容
+        with st.expander("題目內容（含閱讀素材）", expanded=True):
+            if question_info.get("閱讀素材"):
+                st.markdown(f"**閱讀素材/題組說明：**\n{question_info['閱讀素材']}")
+            st.markdown(f"**題幹：** {question_info['題幹']}")
+            options_dict = question_info.get("選項", {})
+            for k, v in options_dict.items():
+                st.markdown(f"({k}) {v}")
+            if correct_ans:
+                st.caption(f"本題正確答案：{correct_ans}")
+            elif question_info.get("正解"):
+                st.caption(f"本題正確答案：{question_info['正解']}")
+            if student_ans:
+                st.caption(f"你上次作答答案：{student_ans}")
+
+    # 教練回應風格
+    style = st.selectbox("教練回應風格：", ["引導式（預設）", "診斷式", "延伸補充"])
+
+    # 多輪對話流程
+    prompt = st.chat_input("請輸入你想問 AI 教練的內容、困難、疑問或心得…")
+    if prompt:
+        # 收集所有歷史訊息（可讓 AI 看到所有前文）
+        chat_history = st.session_state.coach_chat_history
+        chat_round = st.session_state.coach_chat_round + 1
+
+        # 學生歷程摘要
         summary = StudentModel().export_summary()
         summary_text = json.dumps(summary, ensure_ascii=False, indent=2)
 
-        prompt_parts = []
-        if question_info:
-            prompt_parts.append(f"【題目】\n{question_info['題幹']}\n\n【選項】\n(A) {question_info['選項']['A']}\n(B) {question_info['選項']['B']}\n(C) {question_info['選項']['C']}\n(D) {question_info['選項']['D']}\n【正確答案】{question_info['正解']}")
-        prompt_parts.append(f"【學生說明】\n{prompt}")
-        prompt_parts.append(f"【學生近期摘要】\n{summary_text}")
-        prompt_parts.append(f"【教練風格】{style}")
+        # 組完整 prompt 並送給 coach_agent
+        full_answer = run_coach_dialogue(
+            question_info=question_info or st.session_state.coach_last_qinfo,
+            chat_history=chat_history,
+            user_input=prompt,
+            style=style,
+            student_ans=student_ans or st.session_state.coach_last_student_ans,
+            correct_ans=correct_ans,
+            summary=summary_text
+        )
 
-        full_prompt = "\n\n".join(prompt_parts)
+        st.session_state.coach_chat_history.append(("你", prompt))
+        st.session_state.coach_chat_history.append(("AI 教練", full_answer))
+        st.session_state.coach_chat_round = chat_round
 
-        st.session_state.chat_history.append(("你", prompt))
-
-        with st.spinner("AI 教練思考中..."):
-            result = asyncio.run(Runner.run(coach_agent, input=full_prompt))
-            response = result.final_output.strip()
-            st.session_state.chat_history.append(("AI 教練", response))
-
-        st.session_state.chat_round += 1
-
-    # 顯示聊天氣泡
-    for speaker, msg in st.session_state.chat_history:
+    # 聊天氣泡顯示
+    for speaker, msg in st.session_state.coach_chat_history:
         with st.chat_message("user" if speaker == "你" else "assistant"):
             st.markdown(msg)
 
-    if st.session_state.chat_round >= 3:
+    if st.session_state.coach_chat_round >= 3:
         st.success("已達三輪討論，自動結束此次互動，請重新開始新的提問！")
         if st.button("重新開始新的互動"):
-            st.session_state.chat_history = []
-            st.session_state.chat_round = 0
+            st.session_state.coach_chat_history = []
+            st.session_state.coach_chat_round = 0
+            st.session_state.coach_last_qinfo = None
+            st.session_state.coach_last_student_ans = None
+
+# 若直接執行
+if __name__ == "__main__":
+    run_coach_chat_view()

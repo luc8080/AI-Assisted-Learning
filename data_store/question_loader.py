@@ -1,100 +1,152 @@
 import sqlite3
 import random
-import streamlit as st
+import json
 
 DB_PATH = "data_store/question_bank.sqlite"
 
-# 取得所有題目 ID
-def get_all_question_ids():
+# === 取得所有單題 ===
+def get_all_single_questions():
     conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM questions")
-    results = [row[0] for row in cursor.fetchall()]
+    c = conn.cursor()
+    c.execute("""
+        SELECT id, content, options, answer, explanation, topic, difficulty, question_type
+        FROM questions
+        WHERE group_id IS NULL
+    """)
+    results = c.fetchall()
     conn.close()
-    return results
-
-# 隨機取得一題
-def get_random_question():
-    # 若來自錯題本，優先載入指定題號
-    if "from_wrongbook" in st.session_state:
-        qid = st.session_state.pop("from_wrongbook")
-        return get_question_by_id(qid)
-
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM questions ORDER BY RANDOM() LIMIT 1")
-    row = cursor.fetchone()
-    conn.close()
-
-    if not row:
-        return None
-
-    return {
-        "題號": row[0],
-        "出處": row[1],
-        "題幹": row[2],
-        "選項": {
-            "A": row[3],
-            "B": row[4],
-            "C": row[5],
-            "D": row[6]
-        },
-        "正解": row[7],
-        "主題": row[8],
-        "段落標題": row[9],
-        "關鍵詞": row[10].split(", ") if row[10] else []
-    }
-
-# 依主題出題（可擴充）
-def get_questions_by_topic(topic):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM questions WHERE topic = ?", (topic,))
-    rows = cursor.fetchall()
-    conn.close()
-
-    return [
-        {
+    questions = []
+    for row in results:
+        questions.append({
+            "type": "single",
             "題號": row[0],
-            "出處": row[1],
-            "題幹": row[2],
-            "選項": {
-                "A": row[3],
-                "B": row[4],
-                "C": row[5],
-                "D": row[6]
-            },
-            "正解": row[7],
-            "主題": row[8],
-            "段落標題": row[9],
-            "關鍵詞": row[10].split(", ") if row[10] else []
-        }
-        for row in rows
-    ]
+            "題幹": row[1],
+            "選項": json.loads(row[2]) if row[2] else {},
+            "正解": row[3],
+            "解析": row[4],
+            "主題": row[5],
+            "難度": row[6],
+            "題型": row[7],
+        })
+    return questions
 
-# 根據題號查詢題目
-def get_question_by_id(qid: str):
+# === 取得所有題組 ===
+def get_all_question_groups():
     conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM questions WHERE id = ?", (qid,))
-    row = cursor.fetchone()
+    c = conn.cursor()
+    c.execute("""
+        SELECT id, title, reading_text, category
+        FROM question_groups
+    """)
+    groups = c.fetchall()
+    result = []
+    for group_row in groups:
+        group_id, title, reading_text, category = group_row
+        c.execute("""
+            SELECT id, content, options, answer, explanation, topic, difficulty, question_type
+            FROM questions
+            WHERE group_id = ?
+        """, (group_id,))
+        subquestions = []
+        for q in c.fetchall():
+            subquestions.append({
+                "sub_id": q[0],
+                "題幹": q[1],
+                "選項": json.loads(q[2]) if q[2] else {},
+                "正解": q[3],
+                "解析": q[4],
+                "主題": q[5],
+                "難度": q[6],
+                "題型": q[7],
+            })
+        result.append({
+            "type": "group",
+            "group_id": group_id,
+            "title": title,
+            "reading_text": reading_text,
+            "category": category,
+            "questions": subquestions
+        })
     conn.close()
+    return result
 
-    if not row:
+# === 取得隨機單題或題組（可帶模式）===
+def get_random_question(mode="auto"):
+    singles = get_all_single_questions()
+    groups = get_all_question_groups()
+    all_items = singles + groups
+
+    if not all_items:
         return None
 
-    return {
-        "題號": row[0],
-        "出處": row[1],
-        "題幹": row[2],
-        "選項": {
-            "A": row[3],
-            "B": row[4],
-            "C": row[5],
-            "D": row[6]
-        },
-        "正解": row[7],
-        "主題": row[8],
-        "段落標題": row[9],
-        "關鍵詞": row[10].split(", ") if row[10] else []
-    }
+    # auto: 單題與題組皆可隨機抽
+    item = random.choice(all_items)
+    return item
+
+def get_random_single_question():
+    singles = get_all_single_questions()
+    if not singles:
+        return None
+    return random.choice(singles)
+
+def get_random_group():
+    groups = get_all_question_groups()
+    if not groups:
+        return None
+    return random.choice(groups)
+
+# === 依據題號/小題 id 查單題或題組小題 ===
+def get_question_by_id(qid):
+    """
+    輸入題號（單題為 id，題組小題為 sub_id），自動判斷來源
+    """
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    # 先查單題
+    c.execute("""
+        SELECT id, content, options, answer, explanation, topic, difficulty, question_type
+        FROM questions
+        WHERE id = ? AND group_id IS NULL
+    """, (qid,))
+    row = c.fetchone()
+    if row:
+        conn.close()
+        return {
+            "type": "single",
+            "題號": row[0],
+            "題幹": row[1],
+            "選項": json.loads(row[2]) if row[2] else {},
+            "正解": row[3],
+            "解析": row[4],
+            "主題": row[5],
+            "難度": row[6],
+            "題型": row[7],
+        }
+    # 查題組內小題
+    c.execute("""
+        SELECT q.id, q.content, q.options, q.answer, q.explanation, q.topic, q.difficulty, q.question_type,
+               g.id, g.title, g.reading_text, g.category
+        FROM questions q
+        JOIN question_groups g ON q.group_id = g.id
+        WHERE q.id = ?
+    """, (qid,))
+    row = c.fetchone()
+    if row:
+        conn.close()
+        return {
+            "type": "group_sub",
+            "sub_id": row[0],
+            "題幹": row[1],
+            "選項": json.loads(row[2]) if row[2] else {},
+            "正解": row[3],
+            "解析": row[4],
+            "主題": row[5],
+            "難度": row[6],
+            "題型": row[7],
+            "group_id": row[8],
+            "group_title": row[9],
+            "reading_text": row[10],
+            "category": row[11]
+        }
+    conn.close()
+    return None

@@ -72,23 +72,28 @@ agents = {
 
 summarizer = summarizer_agent
 
-# ✅ 並行回饋 + 每區塊獨立 spinner 呈現
+# ✅ 不用 block element 版本
 async def run_agent_discussion(prompt: str, streamlit_container):
-    placeholders = {title: streamlit_container.empty() for title in agents}
+    # 1. 依序顯示三個 AI 回饋（不在任何 status/spinner 內）
+    ai_outputs = []
+    for title, agent in agents.items():
+        # 提示正在回應
+        streamlit_container.info(f"{title} 回應中...")
+        try:
+            result = await Runner.run(agent, input=prompt)
+            streamlit_container.markdown(f"### {title}")
+            streamlit_container.code(result.final_output, language="markdown")
+            ai_outputs.append((title, result.final_output))
+        except Exception as e:
+            streamlit_container.error(f"{title} 回饋失敗：{e}")
+            ai_outputs.append((title, "（AI 回饋失敗）"))
 
-    async def run_single(title, agent):
-        with placeholders[title]:
-            with streamlit_container.status(f"{title} 回應中..."):
-                result = await Runner.run(agent, input=prompt)
-                streamlit_container.markdown(f"### {title}")
-                streamlit_container.code(result.final_output, language="markdown")
-                return title, result.final_output
-
-    tasks = [run_single(title, agent) for title, agent in agents.items()]
-    results = await asyncio.gather(*tasks)
-
-    summary_input = "\n\n".join([f"{title}：\n{text}" for title, text in results])
-    summary_result = await Runner.run(summarizer, input=summary_input)
-
-    streamlit_container.markdown("## 🧠 回饋總結")
-    streamlit_container.code(summary_result.final_output, language="markdown")
+    # 2. 彙整總結
+    summary_input = "\n\n".join([f"{title}：\n{text}" for title, text in ai_outputs])
+    streamlit_container.info("🧠 回饋總結產生中...")
+    try:
+        summary_result = await Runner.run(summarizer, input=summary_input)
+        streamlit_container.markdown("## 🧠 回饋總結")
+        streamlit_container.code(summary_result.final_output, language="markdown")
+    except Exception as e:
+        streamlit_container.error(f"總結回饋失敗：{e}")

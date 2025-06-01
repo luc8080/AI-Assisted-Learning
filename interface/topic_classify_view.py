@@ -1,3 +1,5 @@
+# 檔案路徑：interface/topic_classify_view.py
+
 import streamlit as st
 import sqlite3
 import json
@@ -5,6 +7,7 @@ import os
 import time
 from dotenv import load_dotenv
 from agents import Agent, OpenAIChatCompletionsModel, AsyncOpenAI, Runner
+import asyncio
 
 # === 初始化 Gemini 模型 ===
 load_dotenv()
@@ -21,8 +24,8 @@ model = OpenAIChatCompletionsModel(
 classifier = Agent(
     name="TopicClassifier",
     instructions="""
-你是一位資深國文教師，負責為學測國文素養題標記主題類別。
-請依照以下分類準則，從題幹與選項中判斷最適合的主題：
+你是一位台灣高中國文素養導向命題專家，負責為學測國文題目標記最適合的主題類別。
+請依照下列類別，根據【閱讀文本】、【題幹】與【選項】做出判斷，只能擇一：
 - 閱讀理解
 - 文意推論
 - 修辭判斷
@@ -32,46 +35,73 @@ classifier = Agent(
 - 文學常識
 - 其他
 
-請僅回傳分類名稱，不需解釋。
+請**僅回傳分類名稱**，不要解釋或加任何其他內容。
 """,
     model=model
 )
 
-# === 執行分類任務 ===
 def classify_and_update_questions(db_path="data_store/question_bank.sqlite"):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-
-    cursor.execute("SELECT id, stem, option_a, option_b, option_c, option_d FROM questions WHERE topic IS NULL OR topic = '' OR topic = '待分類'")
+    # 取出題目 & 其對應 group_id
+    cursor.execute("SELECT id, group_id, content, options FROM questions WHERE topic IS NULL OR topic = '' OR topic = '待分類'")
     rows = cursor.fetchall()
 
     classified = 0
     failed = 0
 
-    for qid, passage, a, b, c, d in rows:
+    # 確保 event loop 正常
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+    for qid, group_id, content, options_json in rows:
+        # 補上閱讀文本
+        reading_text = ""
+        if group_id:
+            cursor.execute("SELECT reading_text FROM question_groups WHERE id = ?", (group_id,))
+            row = cursor.fetchone()
+            if row and row[0]:
+                reading_text = row[0]
+
+        try:
+            options = json.loads(options_json) if options_json else {}
+        except Exception:
+            options = {}
+        option_str = ""
+        if isinstance(options, dict) and options:
+            for k in sorted(options.keys()):
+                option_str += f"({k}) {options[k]}\n"
+
+        # 新版 prompt
         prompt = f"""
-請根據下列題目內容判斷其主題分類：
+【閱讀文本】
+{reading_text if reading_text else "（無）"}
 
-題幹：{passage}
-選項：
-(A) {a}
-(B) {b}
-(C) {c}
-(D) {d}
+【題幹】
+{content}
 
-請從以下類別中選擇最適合的主題：閱讀理解、文意推論、修辭判斷、語用語境、語詞詞義、篇章結構、文學常識、其他。請僅回傳分類名稱。
+【選項】
+{option_str}
+
+請從以下類別中選擇一個最適合本題的主題分類，僅回傳分類名稱：
+閱讀理解、文意推論、修辭判斷、語用語境、語詞詞義、篇章結構、文學常識、其他。
 """
+
         try:
             result = None
             for attempt in range(2):  # 最多重試一次
                 try:
-                    result = Runner.run_sync(classifier, input=prompt)
-                    time.sleep(4.0)
-                    topic = result.final_output.strip()
-                    if topic:
+                    out = Runner.run_sync(classifier, input=prompt)
+                    topic = out.final_output.strip().replace("：", "").replace(":", "")
+                    topic = topic.split()[0]
+                    valid_topics = {"閱讀理解", "文意推論", "修辭判斷", "語用語境", "語詞詞義", "篇章結構", "文學常識", "其他"}
+                    if topic in valid_topics:
                         cursor.execute("UPDATE questions SET topic = ? WHERE id = ?", (topic, qid))
                         classified += 1
                         break
+                    time.sleep(4.0)
                 except Exception as inner:
                     if attempt == 0:
                         time.sleep(6)
