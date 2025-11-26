@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRDA ECHO 導入方案 - 最終完美版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- 1. 設計系統變數 --- */
+        :root {
+            --bg-canvas: #e5e5e5; 
+            --bg-slide: #ffffff; 
+            --text-primary: #1f2937;  /* Gray-900 */
+            --text-secondary: #6b7280; /* Gray-500 */
+            
+            /* 品牌色系 */
+            --color-brand-blue: #1e40af; /* 結構/標題 */
+            --color-echo-green: #10b981; /* 效益/亮點 */
+            --color-alert-red: #b91c1c;  /* 痛點/風險 */
+            
+            /* 背景色 */
+            --bg-soft-green: #f0fdf4;
+            --bg-soft-red: #fef2f2;
+            --bg-soft-gray: #f9fafb;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif; 
+            background-color: var(--bg-canvas);
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; overflow: hidden; 
+            color: var(--text-primary);
+        }
+
+        /* --- 2. 簡報容器 (核心) --- */
+        #presentation-stage {
+            aspect-ratio: 16 / 9; 
+            width: 95vw; max-width: 1600px; max-height: 95vh;
+            background-color: var(--bg-slide); 
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15); 
+            border-radius: 12px; 
+            position: relative; 
+            overflow-y: auto;  /* 平常允許內部垂直捲動 */
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        /* 全螢幕樣式：針對 #presentation-stage */
+        #presentation-stage:fullscreen,
+        #presentation-stage:-webkit-full-screen {
+            width: 100vw; height: 100vh;
+            max-width: none; max-height: none;
+            border-radius: 0; box-shadow: none;
+            padding: 0; 
+        }
+
+        /* 手機版 RWD 適配 */
+        @media (max-width: 768px) {
+            body { height: auto; overflow-y: auto; display: block; padding: 1rem; }
+            #presentation-stage { width: 100%; height: auto; aspect-ratio: auto; min-height: 60vh; overflow: visible; }
+            .nav-controls { position: fixed; bottom: 1rem; right: 1rem; }
+            .page-number { position: fixed; bottom: 1rem; left: 1rem; }
+        }
+
+        /* 內容容器：預留底部空間防止被按鈕遮擋 */
+        .slide-content-area { 
+            min-height: 100%;
+            padding: 3.5% 5% 5rem 5%; /* 底部留白 5rem */
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            opacity: 1;
+            transition: opacity 0.25s ease-in-out;
+            box-sizing: border-box;
+        }
+        
+        .slide-content-area.fade-out { opacity: 0; }
+
+        /* --- 3. 元件與工具類別補強 (CSS Mapping) --- */
+        .font-serif { font-family: 'Playfair Display', serif; }
+        
+        /* 補強：讓 HTML 中的自訂 class 生效 */
+        .text-brand { color: var(--color-brand-blue); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-echo { color: var(--color-echo-green); }
+        .text-alert { color: var(--color-alert-red); }
+        
+        .border-brand { border-color: var(--color-brand-blue); }
+        .border-echo { border-color: var(--color-echo-green); }
+        .border-alert { border-color: var(--color-alert-red); }
+
+        /* 卡片系統 */
+        .card-base {
+            background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card-highlight {
+            background: var(--bg-soft-green); border: 1px solid #a7f3d0; border-left: 4px solid var(--color-echo-green);
+            border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .card-alert {
+            background: var(--bg-soft-red); border: 1px solid #fecaca; border-left: 4px solid var(--color-alert-red);
+            border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* 特殊卡片：Bento Grid */
+        .bento-card {
+            background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.5rem;
+            display: flex; flex-direction: column; transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .bento-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.06); border-color: var(--color-echo-green); }
+        .bento-bg-icon { position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.05; color: var(--text-primary); transform: rotate(-15deg); pointer-events: none; }
+
+        /* 表格優化 */
+        .design-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+        .design-table th { background-color: var(--color-brand-blue); color: white; padding: 0.75rem 1rem; text-align: left; font-size: 0.9rem; font-weight: 500; }
+        .design-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; font-size: 0.9rem; color: #4b5563; }
+        .design-table tr:last-child td { border-bottom: none; }
+        .design-table .echo-col { background-color: var(--bg-soft-green); border-left: 2px solid var(--color-echo-green); border-right: 2px solid var(--color-echo-green); font-weight: 700; color: #065f46; }
+        .design-table th:last-child { background-color: var(--color-echo-green); border-top-right-radius: 8px; }
+        .design-table th:first-child { border-top-left-radius: 8px; }
+        .design-table th:last-child { border-top-right-radius: 8px; }
+        .design-table tr:last-child .echo-col { border-bottom: 2px solid var(--color-echo-green); border-radius: 0 0 8px 8px; }
+        
+        .row-header { font-weight: 600; color: #111827; white-space: nowrap; background-color: #f9fafb; }
+        
+        /* 敏感度分析表格 */
+        .sen-table { width: 100%; border-collapse: collapse; }
+        .sen-table th { background-color: #374151; color: white; padding: 0.75rem; text-align: center; font-size: 0.9rem; }
+        .sen-table td { padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb; }
+        .sen-row-pessimistic { background-color: #fef2f2; color: #991b1b; font-weight: bold; }
+        
+        /* 其他特殊樣式 */
+        .timeline-step { background-color: white; padding: 1rem; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .reason-card { border-top: 4px solid var(--color-brand-blue); transition: transform 0.2s; }
+        .reason-card:hover { transform: translateY(-2px); }
+        .reason-card.highlight { border-top-color: var(--color-echo-green); background-color: var(--bg-soft-green); }
+
+        /* 導航按鈕 */
+        .nav-controls { position: absolute; bottom: 1.5rem; right: 2rem; display: flex; gap: 1rem; z-index: 50; }
+        .page-number { position: absolute; bottom: 1.5rem; left: 2rem; font-size: 0.85rem; color: var(--text-secondary); font-family: 'Inter'; letter-spacing: 1px; z-index: 50;}
+        .nav-btn { 
+            background: white; border: 1px solid #e5e7eb; color: var(--text-primary); width: 44px; height: 44px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s ease; 
+        }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); background-color: #f9fafb; }
+        .nav-btn:active { transform: translateY(0); }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    </style>
+</head>
+<body>
+
+    <div id="presentation-stage">
+        <div id="slide-content" class="slide-content-area">
+            <!-- Content injected by JS -->
+        </div>
+        
+        <div class="page-number" id="page-indicator">01 / 24</div>
+        
+        <div class="nav-controls">
+            <button id="fullscreenBtn" class="nav-btn" title="全螢幕 (F)" aria-label="切換全螢幕">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+            <div class="w-px h-6 bg-gray-300 mx-1 self-center"></div>
+            <button id="prevBtn" class="nav-btn" aria-label="上一頁"><i class="fa-solid fa-chevron-left"></i></button>
+            <button id="nextBtn" class="nav-btn" aria-label="下一頁"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 24;
+        let isTransitioning = false; 
+        const slidesData = {};
+
+        /* =========================================
+           Slide 1: 封面
+        ========================================= */
+        slidesData[1] = `
+            <div class="h-full flex flex-col justify-center items-center text-center">
+                <div class="mb-6">
+                    <span class="bg-gray-800 text-white px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-full shadow-sm">2025 Strategy Proposal</span>
+                </div>
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight mb-4">HRDA ECHO 導入方案</h1>
+                <p class="text-2xl md:text-3xl text-gray-400 font-serif italic mb-10">AI-Driven Instructor Training Platform</p>
+                
+                <div class="w-24 h-1.5 bg-gray-800 rounded-full mb-10"></div>
+                
+                <p class="text-xl text-gray-600 max-w-2xl leading-relaxed">
+                    CoreLab 講師表達力與課程開發品質 <br> 
+                    <strong class="text-gray-900 font-semibold">AI 輔助系統導入計畫</strong>
+                </p>
+
+                <div class="mt-auto w-full max-w-4xl border-t border-gray-200 pt-6 flex justify-between text-sm text-gray-500">
+                    <div class="text-left">
+                        <p class="uppercase tracking-widest text-xs mb-1">Presenter</p>
+                        <p class="font-bold text-gray-800 text-base">[ 您的姓名 / 職稱 ]</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="uppercase tracking-widest text-xs mb-1">Department</p>
+                        <p class="font-bold text-gray-800 text-base">資策會數位教育研究所 CoreLab</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 2: Executive Summary
+        ========================================= */
+        slidesData[2] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-3xl font-bold text-brand">Executive Summary</h2>
+                    <p class="text-secondary mt-1">決策高層摘要：核心價值與效益預估</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+                    <div class="lg:col-span-2 flex flex-col justify-center space-y-6">
+                        <div class="card-highlight p-8">
+                            <h3 class="text-2xl font-bold text-green-800 mb-4">🎯 核心價值主張</h3>
+                            <p class="text-xl text-gray-700 leading-relaxed">
+                                在學員要求提高、資深講師成本高昂的背景下，導入 ECHO 是 CoreLab 
+                                <strong>邁向智慧化、數據化師資培育</strong> 的唯一解方。
+                            </p>
+                        </div>
+                        <div class="card-base p-6 border-l-4 border-gray-400">
+                            <p class="text-lg text-gray-600 font-medium mb-2">🚀 下一步建議</p>
+                            <p class="text-gray-500">立即啟動 <strong>8 週試點計畫</strong>，以最小風險驗證初期效益，隨後進行全面導入。</p>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1 flex flex-col gap-4">
+                        <div class="card-base bg-gray-900 text-white flex flex-col justify-center items-center py-8 border-none">
+                            <p class="text-xs opacity-60 uppercase tracking-widest mb-2">Total Annual Benefit</p>
+                            <p class="text-5xl font-serif font-bold text-green-400">NT$ 463 <span class="text-lg">萬</span></p>
+                            <p class="text-xs opacity-50 mt-2">年效益估算</p>
+                        </div>
+                        <div class="card-base flex flex-col justify-center items-center py-4">
+                            <p class="text-sm text-gray-500 mb-1">首年 ROI</p>
+                            <p class="text-3xl font-bold text-green-600 font-serif">1,118%</p>
+                        </div>
+                        <div class="card-base flex flex-col justify-center items-center py-4">
+                            <p class="text-sm text-gray-500 mb-1">回本週期</p>
+                            <p class="text-3xl font-bold text-brand font-serif">~1 <span class="text-lg sans-serif">個月</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 3: CoreLab 簡介
+        ========================================= */
+        slidesData[3] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-brand">CoreLab 簡介與規模</h2>
+                    <p class="text-secondary mt-1">台灣 ICT 人才培育的核心基石</p>
+                </div>
+                <div class="flex-grow grid grid-cols-12 gap-8">
+                    <div class="col-span-5 flex flex-col justify-center pr-4">
+                        <p class="text-xl leading-relaxed mb-8 text-gray-700">
+                            擁有 <span class="font-bold text-brand border-b-2 border-blue-200">40 年</span> 深耕經驗，是產業人才升級與社群交流的基地。
+                        </p>
+                        <div class="card-base border-l-4 border-brand shadow-sm bg-slate-50">
+                            <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Mission</p>
+                            <p class="font-serif italic text-lg text-gray-800">"成為台灣 ICT 人才供應鏈最關鍵的一環"</p>
+                        </div>
+                    </div>
+                    <div class="col-span-7 grid grid-cols-2 gap-6">
+                        <div class="card-base text-center flex flex-col justify-center">
+                            <p class="text-5xl font-bold text-gray-800 mb-2">50<span class="text-2xl text-gray-400">萬+</span></p>
+                            <p class="text-gray-500 font-medium">累計培育人次</p>
+                        </div>
+                        <div class="card-base text-center flex flex-col justify-center">
+                            <p class="text-5xl font-bold text-gray-800 mb-2">40<span class="text-2xl text-gray-400">門+</span></p>
+                            <p class="text-gray-500 font-medium">年度專業課程</p>
+                        </div>
+                        <div class="card-base col-span-2 bg-gray-800 text-white flex justify-between items-center px-8 border-none">
+                            <div>
+                                <p class="text-sm opacity-60">Teaching Staff</p>
+                                <p class="text-xl font-light">師資雙軌制</p>
+                            </div>
+                            <div class="text-5xl font-serif text-green-400">10<span class="text-2xl text-gray-400 mx-2">/</span>50</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 4: 流程與成本
+        ========================================= */
+        slidesData[4] = `
+            <div class="h-full flex flex-col">
+                <div class="flex justify-between items-end mb-8 border-b border-gray-100 pb-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-brand">現行講師培育全成本結構</h2>
+                        <p class="text-secondary mt-1">從招募到獨立授課的資源投入分析</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs uppercase tracking-widest text-gray-400 mb-1">Total Annual Cost</p>
+                        <p class="text-4xl font-bold text-alert font-serif">$523 <span class="text-lg font-sans text-gray-500 font-normal">萬 / 年</span></p>
+                    </div>
+                </div>
+                
+                <div class="flex-grow grid grid-cols-2 gap-10">
+                    <div class="pr-6 border-r border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-700 mb-4 uppercase tracking-wide">四大養成階段</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="card-base p-4">
+                                <span class="text-2xl font-bold text-blue-200 absolute top-2 right-3">01</span>
+                                <p class="font-bold text-gray-800">招募篩選</p>
+                                <p class="text-xs text-gray-500 mt-1">成本 > $3 萬</p>
+                            </div>
+                            <div class="card-base p-4">
+                                <span class="text-2xl font-bold text-blue-200 absolute top-2 right-3">02</span>
+                                <p class="font-bold text-gray-800">正式培訓</p>
+                                <p class="text-xs text-gray-500 mt-1">成本約 $17 萬</p>
+                            </div>
+                            <div class="card-base p-4">
+                                <span class="text-2xl font-bold text-blue-200 absolute top-2 right-3">03</span>
+                                <p class="font-bold text-gray-800">合教輔導</p>
+                                <p class="text-xs text-gray-500 mt-1">成本約 $5.7 萬</p>
+                            </div>
+                            <div class="card-base p-4 bg-gray-50">
+                                <span class="text-2xl font-bold text-gray-200 absolute top-2 right-3">04</span>
+                                <p class="font-bold text-gray-600">獨立授課</p>
+                                <p class="text-xs text-gray-400 mt-1">持續優化</p>
+                            </div>
+                        </div>
+                        <div class="mt-6 text-center text-sm text-gray-500 bg-gray-50 rounded-lg py-2">
+                            單一專職講師培育成本：<strong>約 $23.8 萬元</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col justify-center">
+                        <h3 class="text-lg font-bold text-gray-700 mb-4 uppercase tracking-wide">面臨的四大痛點</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center p-3 rounded-lg bg-red-50 border-l-4 border-alert">
+                                <span class="text-alert font-bold mr-3">P1</span>
+                                <span class="text-gray-700">潛力評估 <strong>缺乏定量依據</strong></span>
+                            </div>
+                            <div class="flex items-center p-3 rounded-lg bg-red-50 border-l-4 border-alert">
+                                <span class="text-alert font-bold mr-3">P2</span>
+                                <span class="text-gray-700">資深人力 <strong>嚴重分散</strong></span>
+                            </div>
+                            <div class="flex items-center p-3 rounded-lg bg-red-50 border-l-4 border-alert">
+                                <span class="text-alert font-bold mr-3">P3</span>
+                                <span class="text-gray-700">教學品質 <strong>難以快速掌握</strong></span>
+                            </div>
+                            <div class="flex items-center p-3 rounded-lg bg-red-50 border-l-4 border-alert">
+                                <span class="text-alert font-bold mr-3">P4</span>
+                                <span class="text-gray-700">滿意度提升 <strong>因應慢</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 5: 痛點 1
+        ========================================= */
+        slidesData[5] = `
+            <div class="grid grid-cols-12 h-full rounded-xl overflow-hidden shadow-lg border border-gray-200">
+                <div class="col-span-4 bg-red-800 text-white p-10 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs tracking-widest uppercase opacity-60">Pain Point 01</span>
+                        <h2 class="text-4xl font-bold mt-2 mb-4 font-serif text-white">講師篩選<br>缺乏科學化工具</h2>
+                        <p class="opacity-80 text-sm leading-relaxed">過度依賴主觀判斷，導致人才識別盲區。</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest opacity-50 mb-1">Annual Loss</p>
+                        <p class="text-5xl font-serif font-bold">$128 <span class="text-lg font-sans opacity-70 font-normal">萬/年</span></p>
+                        <p class="text-xs mt-2 opacity-60">招募評估階段耗損</p>
+                    </div>
+                </div>
+                <div class="col-span-8 p-10 flex flex-col justify-center bg-white">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-8">現行流程的三大挑戰</h3>
+                    <div class="space-y-5">
+                        <div class="card-alert flex items-start gap-4">
+                            <div class="text-2xl text-red-700 w-8 text-center"><i class="fa-solid fa-scale-unbalanced"></i></div>
+                            <div><h4 class="font-bold text-gray-800 text-lg">主觀偏誤難避免</h4><p class="text-sm text-gray-600 mt-1">缺乏客觀量化標準，評審感受差異大。</p></div>
+                        </div>
+                        <div class="card-alert flex items-start gap-4">
+                            <div class="text-2xl text-red-700 w-8 text-center"><i class="fa-regular fa-clock"></i></div>
+                            <div><h4 class="font-bold text-gray-800 text-lg">招募效率低且重複性高</h4><p class="text-sm text-gray-600 mt-1">高階人力工時投入過大。</p></div>
+                        </div>
+                        <div class="card-alert flex items-start gap-4">
+                            <div class="text-2xl text-red-700 w-8 text-center"><i class="fa-solid fa-chart-line"></i></div>
+                            <div><h4 class="font-bold text-gray-800 text-lg">數據斷層</h4><p class="text-sm text-gray-600 mt-1">無法針對軟實力建立數據檔案。</p></div>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-center">
+                        <span class="inline-block px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-bold border border-gray-200">💡 需求：導入標準化、定量化的 AI 評測工具</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 6: 痛點 2
+        ========================================= */
+        slidesData[6] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6 text-center">
+                    <span class="text-alert font-bold text-xs uppercase tracking-widest">Pain Point 02</span>
+                    <h2 class="text-3xl font-bold text-gray-800 mt-2">講師培訓缺乏個人化回饋</h2>
+                    <div class="w-12 h-1 bg-gray-200 mx-auto mt-4"></div>
+                </div>
+                
+                <div class="flex-grow flex gap-8">
+                    <div class="w-2/3 flex flex-col gap-4 justify-center">
+                        <div class="card-base border-l-4 border-gray-300 flex items-center gap-4 py-5">
+                            <div class="text-3xl text-gray-300 w-12 text-center"><i class="fa-solid fa-user-clock"></i></div>
+                            <div><h4 class="font-bold text-lg text-gray-800">資深講師時間有限</h4><p class="text-sm text-gray-500">每位新手需 60hr 輔導，人力分散。</p></div>
+                        </div>
+                        <div class="card-base border-l-4 border-gray-300 flex items-center gap-4 py-5">
+                            <div class="text-3xl text-gray-300 w-12 text-center"><i class="fa-regular fa-comment-dots"></i></div>
+                            <div><h4 class="font-bold text-lg text-gray-800">回饋內容過度籠統</h4><p class="text-sm text-gray-500">缺乏針對「表達力」的量化分析。</p></div>
+                        </div>
+                        <div class="card-base border-l-4 border-gray-300 flex items-center gap-4 py-5">
+                            <div class="text-3xl text-gray-300 w-12 text-center"><i class="fa-solid fa-video-slash"></i></div>
+                            <div><h4 class="font-bold text-lg text-gray-800">缺乏即時工具</h4><p class="text-sm text-gray-500">依賴錄影回放，自我優化慢。</p></div>
+                        </div>
+                    </div>
+                    
+                    <div class="w-1/3 card-base bg-gray-800 text-white flex flex-col justify-center items-center shadow-xl border-none">
+                        <h3 class="text-sm opacity-60 mb-6 uppercase tracking-widest">年度輔導人力成本</h3>
+                        <div class="text-6xl font-bold font-serif text-red-400 mb-2">$96 <span class="text-xl text-white font-sans font-normal opacity-60">萬+</span></div>
+                        <p class="text-xs opacity-40 mb-10">僅計算 40 位講師投入</p>
+                        <div class="w-full pt-6 border-t border-gray-600 text-center">
+                            <p class="text-sm font-bold mb-1 text-gray-300">目標效益</p>
+                            <p class="text-2xl font-bold">降低 <span class="text-red-400">40%</span> 負擔</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 7: 痛點 3
+        ========================================= */
+        slidesData[7] = `
+            <div class="grid grid-cols-12 h-full rounded-xl overflow-hidden shadow-lg border border-gray-200">
+                <div class="col-span-4 bg-red-800 text-white p-10 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs tracking-widest uppercase opacity-60">Pain Point 03</span>
+                        <h2 class="text-4xl font-bold mt-2 mb-4 font-serif text-white">課程內容品質<br>難以評估</h2>
+                        <p class="opacity-80 text-sm leading-relaxed">評估流程嚴重滯後，缺乏成效預測工具。</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest opacity-50 mb-1">Hidden Loss</p>
+                        <p class="text-5xl font-serif font-bold">$5~8 <span class="text-lg font-sans opacity-70 font-normal">萬/輪</span></p>
+                        <p class="text-xs mt-2 opacity-60">單門課程後續優化成本</p>
+                    </div>
+                </div>
+                <div class="col-span-8 p-10 flex flex-col justify-center bg-white">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-8">現行流程的三大延遲</h3>
+                    <div class="space-y-5">
+                        <div class="card-alert flex items-start gap-4">
+                            <div class="text-2xl text-red-700 w-8 text-center"><i class="fa-solid fa-hourglass-start"></i></div>
+                            <div><h4 class="font-bold text-gray-800 text-lg">品質評估滯後</h4><p class="text-sm text-gray-600 mt-1">問題多在問卷後才發現，修改成本高。</p></div>
+                        </div>
+                        <div class="card-alert flex items-start gap-4">
+                            <div class="text-2xl text-red-700 w-8 text-center"><i class="fa-solid fa-crystal-ball"></i></div>
+                            <div><h4 class="font-bold text-gray-800 text-lg">缺乏預測工具</h4><p class="text-sm text-gray-600 mt-1">課前無法掌握投入度指標。</p></div>
+                        </div>
+                        <div class="card-alert flex items-start gap-4">
+                            <div class="text-2xl text-red-700 w-8 text-center"><i class="fa-solid fa-fire-extinguisher"></i></div>
+                            <div><h4 class="font-bold text-gray-800 text-lg">品控困難</h4><p class="text-sm text-gray-600 mt-1">依賴人工看片，精力用於救火。</p></div>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-center">
+                        <span class="inline-block px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-bold border border-gray-200">💡 需求：籌備階段即掌握品質、預測學員成效</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 8: 痛點 4
+        ========================================= */
+        slidesData[8] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6 text-center">
+                    <span class="text-alert font-bold text-xs uppercase tracking-widest">Pain Point 04</span>
+                    <h2 class="text-3xl font-bold text-gray-800 mt-2">教學效果追蹤滯後</h2>
+                    <div class="w-12 h-1 bg-gray-200 mx-auto mt-4"></div>
+                </div>
+                
+                <div class="flex-grow flex gap-8">
+                    <div class="w-2/3 flex flex-col gap-4 justify-center">
+                        <div class="card-base border-l-4 border-gray-300 flex items-center gap-4 py-5">
+                            <div class="text-3xl text-gray-300 w-12 text-center"><i class="fa-solid fa-calendar-xmark"></i></div>
+                            <div><h4 class="font-bold text-lg text-gray-800">成效追蹤延遲</h4><p class="text-sm text-gray-500">結業 2-3 週才匯總滿意度。</p></div>
+                        </div>
+                        <div class="card-base border-l-4 border-gray-300 flex items-center gap-4 py-5">
+                            <div class="text-3xl text-gray-300 w-12 text-center"><i class="fa-solid fa-masks-theater"></i></div>
+                            <div><h4 class="font-bold text-lg text-gray-800">現場與數字落差</h4><p class="text-sm text-gray-500">學員投入度低需等到負評才浮現。</p></div>
+                        </div>
+                        <div class="card-base border-l-4 border-gray-300 flex items-center gap-4 py-5">
+                            <div class="text-3xl text-gray-300 w-12 text-center"><i class="fa-solid fa-sliders"></i></div>
+                            <div><h4 class="font-bold text-lg text-gray-800">難以即時調整</h4><p class="text-sm text-gray-500">缺乏數據化改善工具。</p></div>
+                        </div>
+                    </div>
+                    
+                    <div class="w-1/3 card-base bg-gray-800 text-white flex flex-col justify-center items-center shadow-xl border-none">
+                        <h3 class="text-sm opacity-60 mb-6 uppercase tracking-widest">隱性營收損失</h3>
+                        <div class="text-6xl font-bold font-serif text-red-400 mb-2">$100 <span class="text-xl text-white font-sans font-normal opacity-60">萬+</span></div>
+                        <p class="text-xs opacity-40 mb-10">學員流失風險</p>
+                        <div class="w-full pt-6 border-t border-gray-600 text-center">
+                            <p class="text-sm font-bold mb-1 text-gray-300">目標</p>
+                            <p class="text-2xl font-bold">導入 <span class="text-red-400">即時追蹤</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 9: 市場競品分析
+        ========================================= */
+        slidesData[9] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-4">
+                    <h2 class="text-3xl font-bold text-brand">市場競品分析概覽</h2>
+                    <p class="text-secondary mt-1">主流講師培育與內容品質控管方案比較</p>
+                </div>
+                <div class="flex-grow card-base p-0 overflow-hidden">
+                    <table class="design-table h-full">
+                        <thead>
+                            <tr>
+                                <th style="width: 16%">評估指標</th>
+                                <th style="width: 21%">1. 傳統人工</th>
+                                <th style="width: 21%">2. 國際 AI 工具</th>
+                                <th style="width: 21%">3. 通用型 AI</th>
+                                <th style="width: 21%" class="bg-green-500 text-white">4. HRDA ECHO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>年度成本</td>
+                                <td><span class="font-bold text-alert">極高</span><br><span class="text-xs text-gray-400">$200萬+</span></td>
+                                <td><span class="font-bold text-gray-700">高</span><br><span class="text-xs text-gray-400">$80-120萬</span></td>
+                                <td><span class="font-bold text-gray-700">中</span><br><span class="text-xs text-gray-400">$30-60萬</span></td>
+                                <td class="echo-col"><span class="text-echo">中低 (ROI佳)</span><br><span class="text-xs font-normal">$50~80萬</span></td>
+                            </tr>
+                            <tr>
+                                <td>培育效率</td>
+                                <td><span class="text-alert font-bold">低</span> (人工)</td>
+                                <td>高 (自動化)</td>
+                                <td>中 (需設規)</td>
+                                <td class="echo-col">極高 (多模態)</td>
+                            </tr>
+                            <tr>
+                                <td>中文支持</td>
+                                <td>極高</td>
+                                <td><strong class="text-alert">低</strong> (英語為主)</td>
+                                <td>中高</td>
+                                <td class="echo-col">極高 (在地優化)</td>
+                            </tr>
+                            <tr>
+                                <td>場域適配</td>
+                                <td>高</td>
+                                <td>低 (限口說)</td>
+                                <td>中低 (乏指標)</td>
+                                <td class="echo-col">極高 (課堂/錄製)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-center"><p class="text-sm text-gray-500">結論：HRDA ECHO 具備最佳投資回報率 (ROI) 與在地適配性。</p></div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 10: 功能詳細比較
+        ========================================= */
+        slidesData[10] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-2"><h2 class="text-3xl font-bold text-brand">競品功能詳細比較</h2><p class="text-secondary mt-1">HRDA ECHO 核心功能優勢具體展現</p></div>
+                <div class="flex-grow card-base p-0 overflow-hidden">
+                    <table class="design-table h-full text-sm">
+                        <thead><tr><th style="width: 15%">功能</th><th style="width: 20%">傳統人工</th><th style="width: 20%">國際 AI</th><th style="width: 20%">通用 AI</th><th style="width: 25%">HRDA ECHO</th></tr></thead>
+                        <tbody>
+                            <tr><td class="row-header">繁中支援</td><td><span class="text-green-600 font-bold">✔</span> (高)</td><td><span class="text-alert font-bold">X</span> (弱)</td><td>✔</td><td class="echo-col">✔✔ (在地校準)</td></tr>
+                            <tr><td class="row-header">多模態情緒</td><td><span class="text-green-600 font-bold">✔</span> (主觀)</td><td><span class="text-yellow-500 font-bold">△</span> (語音)</td><td>X</td><td class="echo-col">✔✔ (台式語意)</td></tr>
+                            <tr><td class="row-header">投入度預測</td><td>X</td><td>X</td><td>X</td><td class="echo-col">✔ (獨家)</td></tr>
+                            <tr><td class="row-header">個人化 AI</td><td>X</td><td><span class="text-yellow-500 font-bold">△</span></td><td>✔</td><td class="echo-col">✔✔ (客製化)</td></tr>
+                            <tr><td class="row-header">即時性</td><td><span class="text-alert font-bold">X</span> (滯後)</td><td>✔</td><td>✔</td><td class="echo-col">✔✔ (即時/批次)</td></tr>
+                            <tr><td class="row-header">導入時程</td><td>即時</td><td>中</td><td>低</td><td class="echo-col">快速 (6-8 週)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-2 text-center text-sm text-gray-500">HRDA ECHO 具備「在地化」、「多模態」和「預測」能力，是組織化培育的最佳解。</p>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 11: 核心功能 (Bento Grid)
+        ========================================= */
+        slidesData[11] = `
+            <div class="h-full flex flex-col">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl font-bold text-gray-900">HRDA ECHO 核心功能：四大突破</h2>
+                    <div class="w-16 h-1 bg-green-500 mx-auto mt-3 mb-2"></div>
+                    <p class="text-gray-500 text-base">徹底解決四大痛點，打造智能師資養成體系</p>
+                </div>
+                <div class="grid grid-cols-2 gap-6 flex-grow">
+                    <div class="card-base hover:border-green-400 transition-colors">
+                        <div class="text-3xl mb-3 text-green-600"><i class="fa-regular fa-comments"></i></div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">多模態情緒分析</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">同步偵測臉部、語音語調、內容，提供客觀指標化評分。</p>
+                        <div class="mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-red-500">✔ 解決痛點 1, 2</div>
+                    </div>
+                    <div class="card-base hover:border-green-400 transition-colors">
+                        <div class="text-3xl mb-3 text-green-600"><i class="fa-solid fa-brain"></i></div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">觀眾投入度預測 (獨家)</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">分析學員視線追蹤、面部反應，推算參與度，提供明確修正建議。</p>
+                        <div class="mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-red-500">✔ 解決痛點 3, 4</div>
+                    </div>
+                    <div class="card-base hover:border-green-400 transition-colors">
+                        <div class="text-3xl mb-3 text-green-600"><i class="fa-solid fa-user-graduate"></i></div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">個人化 AI 教練</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">根據講師風格、學科目標自動生成學習報告和客製化訓練路徑。</p>
+                        <div class="mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-red-500">✔ 解決痛點 2</div>
+                    </div>
+                    <div class="card-base hover:border-green-400 transition-colors">
+                        <div class="text-3xl mb-3 text-green-600"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">影響因子識別</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">自動分析成功案例，識別「提升投入度」的關鍵要素，建立組織知識庫。</p>
+                        <div class="mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-red-500">✔ 解決痛點 1, 3</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 12: 解決方案 Part 1
+        ========================================= */
+        slidesData[12] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-brand">ECHO 解決方案 - 痛點對應表 (Part 1)</h2>
+                    <p class="text-secondary mt-1">針對「篩選」與「培訓」之精準對策</p>
+                </div>
+                <div class="grid grid-cols-2 gap-8 h-full">
+                    <div class="card-base border-t-4 border-brand flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-brand mb-3">痛點：講師篩選缺乏工具</h3>
+                            <p class="text-sm text-gray-600 mb-4 leading-relaxed">對策：多模態分析，5分鐘量化「表達、情緒、語調」，減少主觀偏誤。</p>
+                        </div>
+                        <div class="bg-blue-50 p-5 rounded-lg">
+                            <p class="font-bold text-blue-900 mb-2 text-sm uppercase tracking-wide">預估效益</p>
+                            <ul class="text-sm space-y-2 text-blue-800">
+                                <li>✅ 篩選週期：2週 → 1週</li>
+                                <li>💰 人事成本省：<strong>NT$ 48 萬/年</strong></li>
+                                <li>📈 提升優秀人才識別率</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-base border-t-4 border-brand flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-brand mb-3">痛點：培訓缺乏個人化</h3>
+                            <p class="text-sm text-gray-600 mb-4 leading-relaxed">對策：AI 陪練系統，隨時提供針對性建議，無需等待資深講師。</p>
+                        </div>
+                        <div class="bg-blue-50 p-5 rounded-lg">
+                            <p class="font-bold text-blue-900 mb-2 text-sm uppercase tracking-wide">預估效益</p>
+                            <ul class="text-sm space-y-2 text-blue-800">
+                                <li>✅ 資深講師輔導時數：減少 40%</li>
+                                <li>💰 輔導成本省：<strong>NT$ 96 萬/年</strong></li>
+                                <li>🚀 獨立上線週期：縮短 1 個月</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 13: 解決方案 Part 2
+        ========================================= */
+        slidesData[13] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-brand">ECHO 解決方案 - 痛點對應表 (Part 2)</h2>
+                    <p class="text-secondary mt-1">針對「內容品質」與「效果追蹤」之精準對策</p>
+                </div>
+                <div class="grid grid-cols-2 gap-8 h-full">
+                    <div class="card-base border-t-4 border-alert flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-alert mb-3">痛點：內容品質難以評估</h3>
+                            <p class="text-sm text-gray-600 mb-4 leading-relaxed">對策：投入度預測模型，錄製階段即時預判問題，避免上線後才修改。</p>
+                        </div>
+                        <div class="bg-red-50 p-5 rounded-lg">
+                            <p class="font-bold text-red-900 mb-2 text-sm uppercase tracking-wide">預估效益</p>
+                            <ul class="text-sm space-y-2 text-red-800">
+                                <li>✅ 問題捕捉率：提升 80%</li>
+                                <li>💰 課程迭代成本：<strong>預期減半 (省 $25萬)</strong></li>
+                                <li>🚀 大幅減少事後重錄</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-base border-t-4 border-alert flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-alert mb-3">痛點：效果追蹤滯後</h3>
+                            <p class="text-sm text-gray-600 mb-4 leading-relaxed">對策：即時動態報告，課後立刻回饋，實現敏捷應對。</p>
+                        </div>
+                        <div class="bg-red-50 p-5 rounded-lg">
+                            <p class="font-bold text-red-900 mb-2 text-sm uppercase tracking-wide">預估效益</p>
+                            <ul class="text-sm space-y-2 text-red-800">
+                                <li>✅ 滿意度：預期提升 20%</li>
+                                <li>💰 避免營收損失：<strong>NT$ 15-20 萬</strong></li>
+                                <li>🛡️ 降低學員流失率</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 14: UX
+        ========================================= */
+        slidesData[14] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-8 text-center">
+                    <h2 class="text-3xl font-bold text-gray-800">使用者體驗與操作流程</h2>
+                    <p class="text-gray-500 mt-1">低門檻、高效能的 AI 教練循環</p>
+                </div>
+                <div class="grid grid-cols-4 gap-4 text-center mb-8 flex-grow">
+                    <div class="card-base bg-gray-50 flex flex-col justify-center items-center"><span class="text-3xl mb-3">⬆️</span><p class="font-bold">上傳影片</p><p class="text-xs text-gray-500 mt-1">主流格式/免安裝</p></div>
+                    <div class="card-base flex flex-col justify-center items-center border-2 border-blue-100"><span class="text-3xl mb-3">🧠</span><p class="font-bold">AI 分析</p><p class="text-xs text-gray-500 mt-1">5分鐘完成</p></div>
+                    <div class="card-base flex flex-col justify-center items-center border-2 border-blue-100"><span class="text-3xl mb-3">📈</span><p class="font-bold">查看報告</p><p class="text-xs text-gray-500 mt-1">客觀數據指標</p></div>
+                    <div class="card-base flex flex-col justify-center items-center border-2 border-blue-100"><span class="text-3xl mb-3">💬</span><p class="font-bold">AI 互動</p><p class="text-xs text-gray-500 mt-1">多輪對話調整</p></div>
+                </div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="card-highlight flex items-center gap-4">
+                        <div class="text-2xl text-green-600"><i class="fa-solid fa-check-circle"></i></div>
+                        <div><h3 class="font-bold text-green-800">快速上傳 (易用)</h3><p class="text-sm text-gray-600">無需複雜設定，操作門檻極低。</p></div>
+                    </div>
+                    <div class="card-highlight flex items-center gap-4">
+                        <div class="text-2xl text-green-600"><i class="fa-solid fa-check-circle"></i></div>
+                        <div><h3 class="font-bold text-green-800">互動回饋 (高效)</h3><p class="text-sm text-gray-600">建立個人化學習檔案，隨時調整。</p></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 15: 導入成本
+        ========================================= */
+        slidesData[15] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-brand">導入成本結構分析</h2>
+                    <p class="text-secondary mt-1">年度預算規劃：短期投入 vs. 長期運維</p>
+                </div>
+                <div class="grid grid-cols-2 gap-8 h-full">
+                    <div class="card-base border-t-4 border-brand flex flex-col">
+                        <h3 class="text-xl font-bold text-brand mb-6">直接成本 (Direct Costs)</h3>
+                        <ul class="space-y-4 flex-grow text-sm text-gray-700">
+                            <li class="flex justify-between border-b border-gray-100 pb-2"><span>ECHO 年費授權</span><strong class="text-gray-900">$200,000</strong></li>
+                            <li class="flex justify-between border-b border-gray-100 pb-2"><span>導入培訓費用</span><strong class="text-gray-900">$100,000</strong></li>
+                            <li class="flex justify-between border-b border-gray-100 pb-2"><span>技術整合測試</span><strong class="text-gray-900">$30,000</strong></li>
+                            <li class="flex justify-between pt-4 font-bold text-lg text-brand"><span>小計</span><span>$330,000</span></li>
+                        </ul>
+                    </div>
+                    <div class="flex flex-col gap-6">
+                        <div class="card-base border-t-4 border-gray-400 flex-grow">
+                            <h3 class="text-xl font-bold text-gray-700 mb-4">間接成本</h3>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600 mb-2">導入初期學習曲線損耗</p>
+                                <p class="text-2xl font-bold text-gray-800">$50,000</p>
+                                <p class="text-xs text-gray-400 mt-1">(人事費用 $1M x 5%)</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-800 text-white p-5 rounded-lg text-center">
+                                <p class="text-xs opacity-60 mb-1">第一年總投資</p>
+                                <p class="text-2xl font-bold">$380,000</p>
+                            </div>
+                            <div class="bg-green-600 text-white p-5 rounded-lg text-center">
+                                <p class="text-xs opacity-60 mb-1">第二年起 (運維)</p>
+                                <p class="text-2xl font-bold">$200,000</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 16: 成本效益分析 (BCA)
+        ========================================= */
+        slidesData[16] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-4">
+                    <h2 class="text-3xl font-bold text-brand">成本效益分析 (BCA)</h2>
+                    <p class="text-secondary mt-1">精算 ECHO 帶來的實際財務與管理回收</p>
+                    <p class="text-xs text-gray-400 mt-1">* 效益估算基於：每年 40 門課程、40 位講師、每位平均授課 60 小時計算。</p>
+                </div>
+                <div class="flex-grow grid grid-cols-2 gap-8">
+                    <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm flex flex-col">
+                        <h3 class="text-xl font-bold text-brand mb-4 pb-2 border-b border-blue-200">💰 直接效益 (節流)</h3>
+                        <ul class="space-y-3 flex-grow text-sm text-blue-900">
+                            <li class="flex justify-between"><span>招募篩選 (省 50%)</span><strong>$48 萬</strong></li>
+                            <li class="flex justify-between"><span>培訓輔導 (省 40%)</span><strong>$96 萬</strong></li>
+                            <li class="flex justify-between"><span>合教試講 (省 30%)</span><strong>$19 萬</strong></li>
+                            <li class="flex justify-between"><span>課程迭代優化</span><strong>$25 萬</strong></li>
+                        </ul>
+                        <div class="mt-4 pt-2 border-t border-blue-200 flex justify-between font-bold text-brand text-lg"><span>小計</span><span>$188 萬</span></div>
+                    </div>
+                    <div class="bg-green-50 p-6 rounded-xl border border-green-100 shadow-sm flex flex-col">
+                        <h3 class="text-xl font-bold text-echo mb-4 pb-2 border-b border-green-200">📈 間接效益 (開源)</h3>
+                        <ul class="space-y-3 flex-grow text-sm text-green-900">
+                            <li class="flex justify-between"><span>提早獨立授課</span><strong>$192 萬</strong></li>
+                            <li class="flex justify-between"><span>降低流失率</span><strong>$55 萬</strong></li>
+                            <li class="flex justify-between"><span>學員滿意度增收</span><strong>$28 萬</strong></li>
+                        </ul>
+                        <div class="mt-4 pt-2 border-t border-green-200 flex justify-between font-bold text-echo text-lg"><span>小計</span><span>$275 萬</span></div>
+                    </div>
+                </div>
+                <div class="mt-6 bg-gray-900 text-white p-5 rounded-xl shadow-lg flex justify-between px-10 text-center items-center">
+                    <div><p class="text-xs opacity-50 uppercase tracking-widest mb-1">Total Annual Benefit</p><p class="text-4xl font-bold text-echo font-serif">$463 <span class="text-xl text-white font-sans">萬/年</span></p></div>
+                    <div class="h-10 w-px bg-gray-700"></div>
+                    <div><p class="text-xs opacity-50 uppercase tracking-widest mb-1">Direct ROI</p><p class="text-4xl font-bold text-white font-serif">1,118%</p></div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 17: ROI 與回本期
+        ========================================= */
+        slidesData[17] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-brand">ROI 與回本期計算</h2>
+                    <p class="text-secondary mt-1">財務亮點：每投入 1 元，回報 11 倍以上</p>
+                </div>
+                <div class="flex-grow grid grid-cols-2 gap-10 items-center">
+                    <div class="card-highlight p-10 shadow-lg">
+                        <h3 class="text-xl font-bold text-echo mb-6 uppercase tracking-wide">年度投資回報率 (ROI)</h3>
+                        <div class="text-center">
+                            <p class="text-7xl font-serif font-bold text-echo mb-2">1,118%</p>
+                            <p class="text-sm text-gray-400">Base on Year 1</p>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-gray-100 text-center text-sm text-gray-500">
+                            <span class="bg-white px-2 py-1 rounded font-mono border border-gray-200">($463萬 - $38萬) / $38萬</span>
+                        </div>
+                    </div>
+                    <div class="card-base border-l-4 border-brand p-10 shadow-lg">
+                        <h3 class="text-xl font-bold text-brand mb-6 uppercase tracking-wide">資金回本期 (Payback)</h3>
+                        <div class="text-center">
+                            <p class="text-7xl font-serif font-bold text-brand mb-2">~1 <span class="text-3xl font-sans">個月</span></p>
+                            <p class="text-sm text-gray-400">高速回本</p>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-gray-100 text-center text-sm text-gray-500">
+                            <span class="bg-gray-50 px-2 py-1 rounded font-mono">$38萬 / ($463萬 / 12)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 18: 三年期效益展望 (水平卡片優化)
+        ========================================= */
+        slidesData[18] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-8 text-center">
+                    <h2 class="text-3xl font-bold text-gray-800">三年期效益展望</h2>
+                    <p class="text-gray-500 mt-2">長期價值：形成組織知識庫，累積難以複製的競爭優勢</p>
+                </div>
+                <div class="flex-grow grid grid-cols-3 gap-6">
+                    <!-- Year 1 -->
+                    <div class="card-base border-t-4 border-echo flex flex-col justify-between hover:shadow-lg transition-shadow">
+                        <div class="text-center pt-4">
+                            <p class="text-gray-400 text-sm uppercase tracking-widest mb-2">Year 1</p>
+                            <h3 class="text-2xl font-bold text-gray-800">驗證與回本</h3>
+                        </div>
+                        <div class="text-center my-6">
+                            <p class="text-5xl font-serif font-bold text-echo">1,118%</p>
+                            <p class="text-xs text-gray-400 mt-1">ROI</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded text-center">
+                            <p class="text-sm text-gray-600 font-medium">從專案導入，建立數據基礎</p>
+                        </div>
+                    </div>
+                    <!-- Year 2 -->
+                    <div class="card-base border-t-4 border-echo flex flex-col justify-between hover:shadow-lg transition-shadow">
+                        <div class="text-center pt-4">
+                            <p class="text-gray-400 text-sm uppercase tracking-widest mb-2">Year 2</p>
+                            <h3 class="text-2xl font-bold text-gray-800">規模化</h3>
+                        </div>
+                        <div class="text-center my-6">
+                            <p class="text-4xl font-serif font-bold text-gray-400 opacity-80">2,500%</p>
+                            <p class="text-xs text-gray-400 mt-1">ROI (Est.)</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded text-center">
+                            <p class="text-sm text-gray-600 font-medium">師資品質可視化，為品牌鋪路</p>
+                        </div>
+                    </div>
+                    <!-- Year 3 -->
+                    <div class="card-base border-t-4 border-echo flex flex-col justify-between hover:shadow-lg transition-shadow">
+                        <div class="text-center pt-4">
+                            <p class="text-gray-400 text-sm uppercase tracking-widest mb-2">Year 3</p>
+                            <h3 class="text-2xl font-bold text-gray-800">數據資產化</h3>
+                        </div>
+                        <div class="text-center my-6">
+                            <p class="text-4xl font-serif font-bold text-gray-400 opacity-60">2,900%+</p>
+                            <p class="text-xs text-gray-400 mt-1">ROI (Est.)</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded text-center">
+                            <p class="text-sm text-gray-600 font-medium">可預測品質，支撐跨場域合作</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 19: 敏感度分析
+        ========================================= */
+        slidesData[19] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-brand">敏感度分析 - 風險評估</h2>
+                    <p class="text-secondary mt-1">即使在保守情境下，導入效益依然顯著</p>
+                </div>
+                <div class="flex-grow grid grid-cols-12 gap-8">
+                    <div class="col-span-8 card-base p-0 overflow-hidden flex flex-col">
+                        <div class="h-full overflow-y-auto">
+                        <table class="design-table h-full">
+                            <thead>
+                                <tr><th style="width: 25%">情境</th><th style="width: 25%">達成率</th><th style="width: 25%">預期 ROI</th><th style="width: 25%">回本期</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="font-bold text-echo">樂觀情境</td><td>110%</td><td>1,300%</td><td>< 1 月</td></tr>
+                                <tr><td class="font-bold text-brand">基準情境</td><td>100%</td><td>1,118%</td><td>1 月</td></tr>
+                                <tr><td class="font-bold text-gray-600">保守情境</td><td>70%</td><td>620%</td><td>1.7 月</td></tr>
+                                <tr class="bg-red-50"><td class="font-bold text-alert">悲觀情境</td><td class="text-alert">50%</td><td class="text-alert">415%</td><td class="text-alert">2 月</td></tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <div class="p-4 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-600">
+                            <strong>Insight:</strong> 即使效益減半，回本期仍僅需 2 個月，風險極低。
+                        </div>
+                    </div>
+                    <div class="col-span-4 flex flex-col gap-4">
+                        <h3 class="text-lg font-bold text-gray-800">風險應對策略</h3>
+                        <div class="card-base border-l-4 border-brand py-4"><h4 class="font-bold text-brand text-base">✅ 資安與法遵</h4><p class="text-xs text-gray-500 mt-1">符合本地規範，資料落地台灣。</p></div>
+                        <div class="card-base border-l-4 border-brand py-4"><h4 class="font-bold text-brand text-base">✅ 系統整合</h4><p class="text-xs text-gray-500 mt-1">不影響既有 LMS，獨立運行。</p></div>
+                        <div class="card-base border-l-4 border-brand py-4"><h4 class="font-bold text-brand text-base">✅ 接受度管理</h4><p class="text-xs text-gray-500 mt-1">種子講師試點 + 自願參與機制。</p></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 20: 導入時程
+        ========================================= */
+        slidesData[20] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-brand">導入時程規劃 (8 週漸進式落地)</h2>
+                    <p class="text-secondary mt-1">漸進式導入，保證組織彈性最大、風險最小</p>
+                </div>
+                <div class="grid grid-cols-3 gap-8 h-full">
+                    <div class="col-span-2 space-y-4 overflow-y-auto pr-2">
+                        <div class="card-base shadow-sm p-4 border-l-4 border-brand">
+                            <div class="flex justify-between items-center mb-1"><h3 class="font-bold text-brand text-lg">Week 1~2：啟動與系統設定</h3><span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: IT / CoreLab</span></div>
+                            <p class="text-sm text-gray-600 mt-1">確認使用場景、組織資料流；協同 IT 完成環境設置。</p>
+                        </div>
+                        <div class="card-base shadow-sm p-4 border-l-4 border-brand">
+                            <div class="flex justify-between items-center mb-1"><h3 class="font-bold text-brand text-lg">Week 3~4：講師培訓與試點</h3><span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: HR / 講師</span></div>
+                            <p class="text-sm text-gray-600 mt-1">選出種子講師進行集中培訓，收集回饋。</p>
+                        </div>
+                        <div class="card-base shadow-sm p-4 border-l-4 border-brand">
+                            <div class="flex justify-between items-center mb-1"><h3 class="font-bold text-brand text-lg">Week 5~6：正式上線與支援</h3><span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: All Staff</span></div>
+                            <p class="text-sm text-gray-600 mt-1">全面啟用帳號，技術團隊提供線上支援。</p>
+                        </div>
+                        <div class="card-base shadow-sm p-4 border-l-4 border-brand">
+                            <div class="flex justify-between items-center mb-1"><h3 class="font-bold text-brand text-lg">Week 7~8：效益評估與建議</h3><p class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: Management</p></div>
+                            <p class="text-sm text-gray-600 mt-1">收集數據、產出首波效益報告。</p>
+                        </div>
+                    </div>
+                    <div class="col-span-1 card-base bg-gray-900 text-white p-8 flex flex-col justify-center border-none">
+                        <h3 class="text-2xl font-bold text-green-400 mb-6">關鍵目標</h3>
+                        <ul class="space-y-4 text-lg font-light opacity-90 list-disc ml-6">
+                            <li>智慧化轉型</li>
+                            <li>風險最小化</li>
+                            <li>8 週進入正軌</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 21: 成功案例
+        ========================================= */
+        slidesData[21] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-brand">成功案例：臺灣師範大學</h2>
+                    <p class="text-secondary mt-1">AI 賦能師資培育，教學品質顯著提升</p>
+                </div>
+                <div class="grid grid-cols-2 gap-8 h-full">
+                    <div class="flex flex-col gap-4 justify-center">
+                        <div class="card-highlight">
+                            <p class="text-4xl font-bold text-echo mb-1">+25%</p>
+                            <h3 class="text-lg font-bold text-gray-800">教師表達力評分</h3>
+                            <p class="text-xs text-gray-500">平均 4.2 分 → 5.2 分</p>
+                        </div>
+                        <div class="card-highlight">
+                            <p class="text-4xl font-bold text-echo mb-1">+18%</p>
+                            <h3 class="text-lg font-bold text-gray-800">學生課堂投入度</h3>
+                            <p class="text-xs text-gray-500">問卷回覆「專注學習」提升</p>
+                        </div>
+                        <div class="card-highlight">
+                            <p class="text-4xl font-bold text-echo mb-1">3 倍</p>
+                            <h3 class="text-lg font-bold text-gray-800">自我練習頻率</h3>
+                            <p class="text-xs text-gray-500">每學期 2 次 → 每月 5 次</p>
+                        </div>
+                    </div>
+                    <div class="card-base bg-gray-50 flex flex-col justify-center p-8 border-none">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">技術應用與長期效益</h3>
+                        <ul class="space-y-4 text-gray-700 text-sm">
+                            <li class="flex items-start"><span class="text-echo mr-2">✔</span> <strong>本案可複製性：</strong> 工作流程與貴單位高度相似</li>
+                            <li class="flex items-start"><span class="text-echo mr-2">✔</span> <strong>資源需求低：</strong> 無需重建基礎設施，直接加值</li>
+                            <li class="flex items-start"><span class="text-echo mr-2">✔</span> <strong>管理效益：</strong> 自動生成集體報告</li>
+                            <li class="flex items-start"><span class="text-echo mr-2">✔</span> <strong>長期影響：</strong> 評鑑分數、留任率上升</li>
+                        </ul>
+                        <div class="mt-auto p-4 bg-green-100 rounded text-center text-green-900 font-bold text-sm mt-8">管理者、師資、學員三方共贏</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 22: 五大理由
+        ========================================= */
+        slidesData[22] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-6 text-center">
+                    <h2 class="text-3xl font-bold text-gray-800">選擇 ECHO 的五大理由</h2>
+                    <p class="text-secondary mt-1">開啟「數據驅動、效益可追蹤」新時代</p>
+                </div>
+                <div class="flex-grow grid grid-cols-3 gap-6">
+                    <div class="card-base border-t-4 border-brand"><h3 class="text-lg font-bold text-gray-800 mb-2">🇹🇼 台灣本土研發</h3><p class="text-sm text-gray-600">在地技術維運，最懂語境需求。</p></div>
+                    <div class="card-highlight"><h3 class="text-lg font-bold text-green-800 mb-2">🧠 領先多模態分析</h3><p class="text-sm text-gray-600">影像+語音+文字，全面把握情感流動。</p></div>
+                    <div class="card-base border-t-4 border-brand"><h3 class="text-lg font-bold text-gray-800 mb-2">🎓 教育場景專用</h3><p class="text-sm text-gray-600">深度合作，從實體到數位都納入開發。</p></div>
+                    <div class="col-span-3 grid grid-cols-2 gap-6">
+                        <div class="card-highlight"><h3 class="text-lg font-bold text-green-800 mb-2">💰 成本效益最優</h3><p class="text-sm text-gray-600">3個月回本，年ROI > 1,000%，釋放 400萬+ 資源。</p></div>
+                        <div class="card-base border-t-4 border-brand"><h3 class="text-lg font-bold text-gray-800 mb-2">🚀 部署快速風險低</h3><p class="text-sm text-gray-600">專人伴走，8週驗證效益，不用摸索。</p></div>
+                    </div>
+                </div>
+                <div class="mt-6 bg-gray-900 text-white p-3 rounded text-center text-base font-bold">我們投資的不是工具，而是 CoreLab 師資團隊升級智慧教育的門票。</div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 23: 下一步行動
+        ========================================= */
+        slidesData[23] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-brand">下一步行動建議 (Next Steps)</h2>
+                    <p class="text-secondary mt-1">分階段推進：快速驗證、持續優化、全面升級</p>
+                </div>
+                <div class="flex-grow grid grid-cols-3 gap-6">
+                    <div class="card-base border-t-4 border-brand flex flex-col justify-start">
+                        <h3 class="text-xl font-bold text-brand mb-4">短期 (1~2 個月)</h3>
+                        <ul class="list-disc ml-5 text-sm text-gray-600 space-y-2">
+                            <li>安排 ECHO 正式展示說明會。</li>
+                            <li>選定 5 位種子講師試用。</li>
+                            <li>設定 KPI (篩選、品質、投入度)。</li>
+                            <li>產出第一波效益回報。</li>
+                        </ul>
+                    </div>
+                    <div class="card-base border-t-4 border-brand flex flex-col justify-start">
+                        <h3 class="text-xl font-bold text-brand mb-4">中期 (3~6 個月)</h3>
+                        <ul class="list-disc ml-5 text-sm text-gray-600 space-y-2">
+                            <li>正式簽約，擴展全職/兼職講師。</li>
+                            <li>建立使用數據 Dashboard。</li>
+                            <li>季度效益評估，優化應用。</li>
+                        </ul>
+                    </div>
+                    <div class="card-base border-t-4 border-brand flex flex-col justify-start">
+                        <h3 class="text-xl font-bold text-brand mb-4">長期 (6~12 個月)</h3>
+                        <ul class="list-disc ml-5 text-sm text-gray-600 space-y-2">
+                            <li>建立專屬師資表達力資料庫。</li>
+                            <li>探索客製化應用場景。</li>
+                            <li>建立可追蹤的智慧培育平台。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 新增：決策請求區塊 -->
+                <div class="mt-6 bg-white border-2 border-green-500 rounded-xl p-6 flex justify-between items-center shadow-lg">
+                    <div>
+                        <h4 class="text-lg font-bold text-green-800 mb-1">本次會議建議決策</h4>
+                        <p class="text-sm text-gray-600">請核准啟動試點，以最小成本驗證效益。</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="px-4 py-2 bg-green-50 rounded text-green-700 font-bold text-sm">1. 核准試點預算</div>
+                        <div class="px-4 py-2 bg-green-50 rounded text-green-700 font-bold text-sm">2. 同意 8 週驗證</div>
+                        <div class="px-4 py-2 bg-green-50 rounded text-green-700 font-bold text-sm">3. 指派專案 Sponsor</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* =========================================
+           Slide 24: Q&A
+        ========================================= */
+        slidesData[24] = `
+            <div class="h-full flex flex-col justify-center items-center text-center">
+                <h1 class="text-7xl font-bold text-gray-900 leading-tight mb-2 font-serif tracking-tighter">THANK YOU</h1>
+                <h2 class="text-3xl font-bold text-brand mt-2 mb-8">Q & A 意見交流時間</h2>
+                
+                <p class="text-lg text-gray-500 mb-12 max-w-2xl font-light">
+                    今天我們分享了現狀痛點、ECHO 的技術優勢、成本效益與未來推進建議。<br>
+                    若有任何現場操作、效益驗證細節，請隨時與我們聯繫。
+                </p>
+                
+                <div class="grid grid-cols-2 gap-12 mt-8 pt-12 border-t border-gray-200 w-full max-w-4xl text-left">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-3">聯繫資訊 (CoreLab)</h3>
+                        <p class="text-base text-gray-600 mb-1"><i class="fa-solid fa-envelope mr-2 text-brand"></i> corelab@iii.org.tw</p>
+                        <p class="text-base text-gray-600"><i class="fa-solid fa-phone mr-2 text-brand"></i> (02) XXXX-XXXX</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-3">HRDA ECHO 官方網站</h3>
+                        <a href="https://hrda.pro/zh/echo-pro-2/" target="_blank" class="text-green-600 hover:text-green-800 text-base font-medium flex items-center">
+                            <i class="fa-solid fa-globe mr-2"></i> https://hrda.pro/zh/echo-pro-2/
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+
+
+        /* --- Core Logic: Update & Transition --- */
+        function updateSlide() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            const contentArea = document.getElementById('slide-content');
+            contentArea.classList.add('fade-out');
+
+            setTimeout(() => {
+                if (currentSlide < 1) currentSlide = 1;
+                if (currentSlide > totalSlides) currentSlide = totalSlides;
+
+                contentArea.innerHTML = slidesData[currentSlide] || `<div class="flex items-center justify-center h-full text-red-500 font-bold">Error loading slide ${currentSlide}</div>`;
+                document.getElementById('page-indicator').innerText = `${String(currentSlide).padStart(2,'0')} / ${totalSlides}`;
+
+                document.getElementById('prevBtn').disabled = currentSlide === 1;
+                document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+
+                // 重置捲動位置 (UX 優化)
+                document.getElementById('presentation-stage').scrollTop = 0;
+
+                contentArea.classList.remove('fade-out');
+                
+                setTimeout(() => {
+                    isTransitioning = false;
+                }, 300); 
+            }, 250);
+        }
+
+        function navigateSlide(direction) {
+            if (isTransitioning) return;
+            currentSlide += direction;
+            updateSlide();
+        }
+
+        window.onload = function() {
+            // 初始載入
+            document.getElementById('slide-content').innerHTML = slidesData[1];
+            
+            // 綁定按鈕
+            const nextBtn = document.getElementById('nextBtn');
+            const prevBtn = document.getElementById('prevBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+            nextBtn.addEventListener('click', () => navigateSlide(1));
+            prevBtn.addEventListener('click', () => navigateSlide(-1));
+            
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.getElementById('presentation-stage').requestFullscreen();
+                    fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                        fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+                    }
+                }
+            });
+
+            // 全螢幕監聽器 (修正 ESC 退出後的 icon 狀態)
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+                }
+            });
+
+            // 鍵盤控制 (防誤觸)
+            document.addEventListener('keydown', (e) => {
+                const tag = (e.target.tagName || '').toLowerCase();
+                const isTyping = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+                if (isTyping) return;
+
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    navigateSlide(1);
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    navigateSlide(-1);
+                } else if (e.key.toLowerCase() === 'f') {
+                    e.preventDefault();
+                    document.getElementById('fullscreenBtn').click();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
