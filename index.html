@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鳳凰互動 ECHO 導入方案 - v65</title>
+    <title>鳳凰互動 ECHO 導入方案 - v68</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,6 +17,7 @@
                         ispan: { orange: '#f97316', light: '#ffedd5' }, // iSpan
                         echo: { green: '#10b981', dark: '#047857', light: '#d1fae5' },
                         alert: { red: '#dc2626' },
+                        iii: { red: '#E60012' } // III Brand Color Hint
                     },
                     boxShadow: {
                         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
@@ -164,36 +165,54 @@
     <script>
         const slidesData = {};
 
-        // --- Slide 1: Cover ---
+        // --- Slide 1: Cover (Optimized Hierarchy) ---
         slidesData[1] = `
             <div class="h-full flex flex-col justify-center items-start relative overflow-hidden pl-16 pr-16">
+                <!-- Background & Decor -->
                 <div class="absolute -right-20 -top-20 w-[600px] h-[600px] bg-blue-50 rounded-full blur-3xl opacity-60 z-0"></div>
+                <div class="absolute left-[-100px] bottom-[-100px] w-[300px] h-[300px] bg-gray-50 rounded-full blur-3xl opacity-40 z-0"></div>
+                
                 <div class="z-10 relative w-full h-full flex flex-col justify-center">
-                    <div class="mb-6 flex items-center gap-3"><div class="h-px w-12 bg-gray-400"></div><span class="text-gray-500 text-sm font-bold uppercase tracking-widest">人力資源系統課程模擬提案</span></div>
-                    <h1 class="text-[5rem] font-bold text-slate-900 leading-[1.1] mb-2 tracking-tight">鳳凰互動 ECHO <br><span class="text-brand-blue">導入計畫</span></h1>
-                    <p class="text-2xl text-gray-400 font-serif italic mb-8">Institute-wide AI Infrastructure</p>
-                    
-                    <div class="flex items-center gap-6 mb-12">
-                        <div class="px-5 py-2 bg-slate-50 border border-slate-200 rounded-lg"><span class="text-slate-500 text-[10px] uppercase block mb-1">Standard</span><span class="text-brand-blue font-bold text-lg">數位教育研究所 (DEI)</span></div>
-                        <i class="fa-solid fa-plus text-gray-300"></i>
-                        <div class="px-5 py-2 bg-slate-50 border border-slate-200 rounded-lg"><span class="text-slate-500 text-[10px] uppercase block mb-1">Operation</span><span class="text-ispan-orange font-bold text-lg">資展國際 (iSpan)</span></div>
+                    <!-- Top Hierarchy: III -->
+                    <div class="mb-4 flex items-center gap-2">
+                        <span class="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Parent Organization</span>
+                        <span class="text-slate-600 font-bold text-sm tracking-widest">財團法人資訊工業策進會 (III) 體系</span>
                     </div>
 
-                    <div class="mt-auto w-full border-t border-gray-200 pt-8">
-                        <div class="grid grid-cols-12 gap-8">
-                            <div class="col-span-3 border-r border-gray-200">
-                                <p class="uppercase tracking-widest text-xs text-gray-400 mb-2">指導老師</p>
-                                <p class="text-2xl font-bold text-slate-800">孫弘岳 教授</p>
+                    <!-- Title -->
+                    <h1 class="text-[4.5rem] font-bold text-slate-900 leading-[1.1] mb-3 tracking-tight">鳳凰互動 ECHO <br><span class="text-brand-blue">導入計畫</span></h1>
+                    <p class="text-2xl text-gray-400 font-serif italic mb-10">AI-Driven Talent Infrastructure for the Next Era</p>
+                    
+                    <!-- Middle Hierarchy: DEI & iSpan (Dual Engines) -->
+                    <div class="flex items-center gap-6 mb-16 border-l-4 border-gray-200 pl-6">
+                        <div>
+                            <span class="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-1">Standard & R&D</span>
+                            <span class="text-brand-blue font-bold text-xl">數位教育研究所 (DEI)</span>
+                        </div>
+                        <div class="text-gray-300 text-2xl font-light">/</div>
+                        <div>
+                            <span class="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-1">Operation & Delivery</span>
+                            <span class="text-ispan-orange font-bold text-xl">資展國際 (iSpan)</span>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: Course & Team Info -->
+                    <div class="mt-auto w-full border-t border-gray-200 pt-6">
+                        <div class="flex justify-between items-start">
+                            <div class="w-1/3">
+                                <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded uppercase tracking-widest font-bold mb-2 inline-block">Course Project</span>
+                                <p class="text-sm font-bold text-slate-700">人力資源系統課程模擬提案</p>
+                                <p class="text-sm text-slate-500 mt-1">指導老師：<strong class="text-slate-800">孫弘岳 教授</strong></p>
                             </div>
-                            <div class="col-span-9 pl-4">
-                                <p class="uppercase tracking-widest text-xs text-gray-400 mb-3">專案組員</p>
-                                <div class="grid grid-cols-3 gap-y-3 gap-x-8 text-base text-slate-700 font-medium">
-                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-3 tracking-wider">61471031H</span>吳秉芸</div>
-                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-3 tracking-wider">61471032H</span>黃俞璇</div>
-                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-3 tracking-wider">61471029H</span>劉千榕</div>
-                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-3 tracking-wider">61371037H</span>方盈婷</div>
-                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-3 tracking-wider">61271001H</span>施博銘</div>
-                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-3 tracking-wider">41271215H</span>周鈺軒</div>
+                            <div class="w-2/3 pl-8 border-l border-gray-100">
+                                <p class="uppercase tracking-widest text-[10px] text-gray-400 mb-3 font-bold">專案組員 (Team Members)</p>
+                                <div class="grid grid-cols-3 gap-y-2 gap-x-6 text-sm text-slate-600">
+                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-2">61471031H</span>吳秉芸</div>
+                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-2">61471032H</span>黃俞璇</div>
+                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-2">61471029H</span>劉千榕</div>
+                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-2">61371037H</span>方盈婷</div>
+                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-2">61271001H</span>施博銘</div>
+                                    <div class="flex items-center"><span class="font-mono text-xs text-slate-400 mr-2">41271215H</span>周鈺軒</div>
                                 </div>
                             </div>
                         </div>
@@ -204,7 +223,7 @@
         // --- Slide 2: Exec Summary ---
         slidesData[2] = `
             <div class="h-full flex flex-col">
-                <div class="flex justify-between items-end mb-8"><div><p class="subtitle">Conclusion First</p><h2 class="text-big font-bold text-slate-800">專案核心結論</h2></div></div>
+                <div class="flex justify-between items-end mb-8"><div><p class="subtitle">Management Summary</p><h2 class="text-big font-bold text-slate-800">專案核心結論</h2></div></div>
                 <div class="grid grid-cols-12 gap-8 h-full">
                     <div class="col-span-7 flex flex-col gap-6">
                         <div class="card-highlight flex-grow flex flex-col justify-center">
@@ -320,7 +339,7 @@
                         <div class="pain-card-red">
                             <h4 class="font-bold text-red-800 mb-2">結構性瓶頸</h4>
                             <p class="text-sm text-red-700 leading-relaxed">
-                                iSpan 承擔巨大的執行成本，但為了符合數位教育研究所的嚴格標準，仍需投入大量資深人力進行「人肉輔導」。若品質未達標，DEI 無法發證，導致「有生源無師資」的開課壓力。
+                                iSpan 承擔巨大的執行成本，但為了符合數位教育研究所的嚴格標準，仍需投入大量資深人力進行「高密度人工輔導」。若品質未達標，DEI 無法發證，導致「有生源無師資」的開課壓力。
                             </p>
                         </div>
                         <div class="bg-blue-50 p-5 rounded-lg border border-blue-100">
@@ -358,7 +377,7 @@
                             <h4 class="font-bold text-xl text-slate-800 mb-2">專任講師 (DEI 標準)</h4>
                             <p class="text-slate-600 mb-2">需深度養成 (Deep Dive)</p>
                             <ul class="list-disc ml-5 text-sm text-slate-500 space-y-1">
-                                <li>需資深講師「手把手」跟課與回饋。</li>
+                                <li>需資深講師「一對一」跟課與回饋。</li>
                                 <li><strong>成本計算：</strong> 8人 x 100hr 投入 = 800工時。</li>
                             </ul>
                         </div>
@@ -450,7 +469,7 @@
                             <h3 class="text-2xl font-bold text-blue-800 mb-4">針對：講師篩選 (Recruitment)</h3>
                             <p class="text-lg text-slate-600 mb-4 font-bold">痛點：</p>
                             <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
-                                <li>iSpan 全台 5 據點海量履歷，人工篩選效率低。</li>
+                                <li>iSpan 全台 5 據點大量履歷，人工篩選效率低。</li>
                                 <li>iSpan 招募標準與 DEI 審核標準常有落差。</li>
                             </ul>
                             <p class="text-lg text-slate-600 mb-4 font-bold">ECHO 對策：</p>
@@ -523,7 +542,7 @@
         // --- Slide 14: UX ---
         slidesData[14] = `<div class="h-full flex flex-col"><div class="mb-10 text-center"><p class="subtitle">User Experience</p><h2 class="text-big font-bold text-slate-800">低門檻、高效能的 AI 教練循環</h2></div><div class="grid grid-cols-4 gap-6 text-center mb-10 flex-grow items-center"><div class="card-base bg-slate-50 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-blue-300">⬆️</span><p class="font-bold text-xl text-slate-700">上傳影片</p><p class="text-sm text-slate-400 mt-2">主流格式/免安裝</p></div><div class="card-base border-blue-100 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-brand-blue">🧠</span><p class="font-bold text-xl text-slate-700">AI 分析</p><p class="text-sm text-slate-400 mt-2">5分鐘完成</p></div><div class="card-base border-blue-100 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-brand-blue">📈</span><p class="font-bold text-xl text-slate-700">查看報告</p><p class="text-sm text-slate-400 mt-2">客觀數據指標</p></div><div class="card-base border-blue-100 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-brand-blue">💬</span><p class="font-bold text-xl text-slate-700">AI 互動</p><p class="text-sm text-slate-400 mt-2">多輪對話調整</p></div></div><div class="grid grid-cols-2 gap-8"><div class="card-highlight flex items-center gap-6 py-6"><div class="text-3xl text-echo-green ml-4"><i class="fa-solid fa-check-circle"></i></div><div><h3 class="font-bold text-echo-dark text-xl">快速上傳 (易用)</h3><p class="text-slate-600">無需複雜設定，操作門檻極低。</p></div></div><div class="card-highlight flex items-center gap-6 py-6"><div class="text-3xl text-echo-green ml-4"><i class="fa-solid fa-check-circle"></i></div><div><h3 class="font-bold text-echo-dark text-xl">互動回饋 (高效)</h3><p class="text-slate-600">建立個人化學習檔案，隨時調整。</p></div></div></div></div>`;
 
-        // --- Slide 15: Investment (Specific Pricing Updated) ---
+        // --- Slide 15: Investment ---
         slidesData[15] = `
             <div class="h-full flex flex-col">
                 <div class="mb-6"><p class="subtitle">Investment Proposal</p><h2 class="text-big font-bold text-slate-800">導入預算結構 (POC Phase)</h2></div>
