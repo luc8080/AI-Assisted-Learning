@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鳳凰互動 ECHO 導入方案 - v56</title>
+    <title>鳳凰互動 ECHO 導入方案 - v62</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -136,6 +136,14 @@
         }
         .badge-dei { background: #dbeafe; color: #1e40af; }
         .badge-ispan { background: #ffedd5; color: #c2410c; }
+        
+        .data-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+            margin-top: 1.5rem; border-top: 1px solid #f1f5f9; padding-top: 1.5rem;
+        }
+        .data-item { text-align: left; }
+        .data-num { display: block; font-weight: 700; font-size: 1.5rem; }
+        .data-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
     </style>
 </head>
 <body>
@@ -156,7 +164,7 @@
     <script>
         const slidesData = {};
 
-        // --- Slide 1: Cover (Fixed & Complete) ---
+        // --- Slide 1: Cover ---
         slidesData[1] = `
             <div class="h-full flex flex-col justify-center items-start relative overflow-hidden pl-16 pr-16">
                 <div class="absolute -right-20 -top-20 w-[600px] h-[600px] bg-blue-50 rounded-full blur-3xl opacity-60 z-0"></div>
@@ -166,7 +174,7 @@
                     <p class="text-2xl text-gray-400 font-serif italic mb-8">Institute-wide AI Infrastructure</p>
                     
                     <div class="flex items-center gap-6 mb-12">
-                        <div class="px-5 py-2 bg-slate-50 border border-slate-200 rounded-lg"><span class="text-slate-500 text-[10px] uppercase block mb-1">Standard</span><span class="text-brand-blue font-bold text-lg">資教所 (DEI)</span></div>
+                        <div class="px-5 py-2 bg-slate-50 border border-slate-200 rounded-lg"><span class="text-slate-500 text-[10px] uppercase block mb-1">Standard</span><span class="text-brand-blue font-bold text-lg">數位教育研究所 (DEI)</span></div>
                         <i class="fa-solid fa-plus text-gray-300"></i>
                         <div class="px-5 py-2 bg-slate-50 border border-slate-200 rounded-lg"><span class="text-slate-500 text-[10px] uppercase block mb-1">Operation</span><span class="text-ispan-orange font-bold text-lg">資展國際 (iSpan)</span></div>
                     </div>
@@ -220,36 +228,48 @@
         // --- Slide 3: Organization ---
         slidesData[3] = `
             <div class="h-full flex flex-col">
-                <div class="mb-8 text-center"><p class="subtitle">Operational Model</p><h2 class="text-big font-bold text-brand-dark">組織分工定位：標準制定 vs 營運交付</h2></div>
+                <div class="mb-8 text-center"><p class="subtitle">Operational Model</p><h2 class="text-big font-bold text-brand-dark">組織分工定位與規模數據</h2></div>
                 <div class="flex-grow grid grid-cols-2 gap-12 items-stretch px-8">
                     <!-- DEI -->
-                    <div class="card-base border-t-8 border-brand-blue flex flex-col relative overflow-hidden"><div class="absolute top-0 right-0 p-4 opacity-5 text-9xl text-brand-blue font-serif italic">S</div>
+                    <div class="card-base border-t-8 border-brand-blue flex flex-col relative overflow-hidden hover:shadow-lg transition-all"><div class="absolute top-0 right-0 p-4 opacity-5 text-9xl text-brand-blue font-serif italic">S</div>
                         <div class="mb-4"><span class="bg-blue-50 text-brand-blue px-3 py-1 rounded-full text-xs font-bold tracking-wide mb-2 inline-block">Standards & Research</span><h3 class="text-3xl font-bold text-slate-800">數位教育研究所 (DEI)</h3></div>
                         <p class="text-sm text-slate-500 mb-6 leading-relaxed border-b border-gray-100 pb-4">
-                            <strong>國家級數位轉型與人才培育智庫。</strong>自 1980 年成立以來，作為政府與產業的數位轉型推手，致力於前瞻學習科技 (EdTech) 研發、國家職能基準 (iPAS) 建立與人才培育模式創新。
+                            <strong>國家級數位轉型智庫。</strong>自 1980 年起，專注於 EdTech 研發、國家職能基準 (iPAS) 制定，是數位人才規格的定義者 (Enabler)。
                         </p>
-                        <div class="flex-grow space-y-4 text-slate-600 text-lg">
-                            <strong class="block text-brand-blue mb-1">核心職責 (Architecture)</strong>
-                            <ul class="list-disc ml-5 text-base space-y-1">
-                                <li><strong>人才發展架構：</strong> 定義 ICT 講師職能模型。</li>
-                                <li><strong>品質審核 (Audit)：</strong> 負責最終師資認證與品質把關。</li>
-                                <li><strong>策略研發：</strong> 前瞻技術課程架構設計。</li>
+                        <div class="flex-grow space-y-4 text-slate-600 text-base">
+                            <strong class="block text-brand-blue mb-1">核心職責 (Define)</strong>
+                            <ul class="list-disc ml-5 space-y-1">
+                                <li>人才發展架構與職能模型。</li>
+                                <li>教學品質審核 (Audit) 與認證。</li>
+                                <li>策略研發：前瞻技術課程架構設計。</li>
                             </ul>
+                        </div>
+                        <div class="data-grid">
+                            <div class="data-item"><span class="data-num text-brand-blue">40+</span><span class="data-label">核心專任講師</span></div>
+                            <div class="data-item"><span class="data-num text-brand-blue">20+</span><span class="data-label">國家級職能基準</span></div>
+                            <div class="data-item"><span class="data-num text-brand-blue">TTQS</span><span class="data-label">金牌訓練機構</span></div>
+                            <div class="data-item"><span class="data-num text-brand-blue">R&D</span><span class="data-label">學習科技研發中心</span></div>
                         </div>
                     </div>
                     <!-- iSpan -->
-                    <div class="card-base border-t-8 border-ispan-orange flex flex-col relative overflow-hidden"><div class="absolute top-0 right-0 p-4 opacity-5 text-9xl text-ispan-orange font-serif italic">O</div>
+                    <div class="card-base border-t-8 border-ispan-orange flex flex-col relative overflow-hidden hover:shadow-lg transition-all"><div class="absolute top-0 right-0 p-4 opacity-5 text-9xl text-ispan-orange font-serif italic">O</div>
                         <div class="mb-4"><span class="bg-orange-50 text-ispan-orange px-3 py-1 rounded-full text-xs font-bold tracking-wide mb-2 inline-block">Operations & Delivery</span><h3 class="text-3xl font-bold text-slate-800">資展國際 (iSpan)</h3></div>
                         <p class="text-sm text-slate-500 mb-6 leading-relaxed border-b border-gray-100 pb-4">
-                            <strong>台灣 IT 實務人才培育第一品牌。</strong>2021 年自資策會獨立衍生，承襲 40 年深厚培訓能量。專注於跨域整合、就業導向的專業養成與企業內訓，是連結產業需求與人才供給的關鍵樞紐。
+                            <strong>台灣 IT 實務人才培育第一品牌。</strong>承襲 40 年能量，專注跨域整合與就業導向養成，是連結產業需求的關鍵樞紐 (Accelerator)。
                         </p>
-                        <div class="flex-grow space-y-4 text-slate-600 text-lg">
-                            <strong class="block text-ispan-orange mb-1">營運職責 (Execution)</strong>
-                            <ul class="list-disc ml-5 text-base space-y-1">
-                                <li><strong>講師招募：</strong> 負責全台專任/外聘講師的 Sourcing。</li>
-                                <li><strong>師資培訓：</strong> 執行講師養成計畫、試教與賦能。</li>
-                                <li><strong>營運交付：</strong> 全台據點排課、招生與教學現場管理。</li>
+                        <div class="flex-grow space-y-4 text-slate-600 text-base">
+                            <strong class="block text-ispan-orange mb-1">營運職責 (Deliver)</strong>
+                            <ul class="list-disc ml-5 space-y-1">
+                                <li>全台講師招募 (Sourcing) 與培訓。</li>
+                                <li>師資培訓：執行講師養成計畫、試教與賦能。</li>
+                                <li>營運交付：全台據點排課、招生與教學現場管理。</li>
                             </ul>
+                        </div>
+                        <div class="data-grid">
+                            <div class="data-item"><span class="data-num text-ispan-orange">5</span><span class="data-label">全台培訓據點</span></div>
+                            <div class="data-item"><span class="data-num text-ispan-orange">10,000+</span><span class="data-label">年培訓人次</span></div>
+                            <div class="data-item"><span class="data-num text-ispan-orange">80+</span><span class="data-label">合作外聘專家</span></div>
+                            <div class="data-item"><span class="data-num text-ispan-orange">4,000+</span><span class="data-label">企業客戶與包班</span></div>
                         </div>
                     </div>
                 </div>
@@ -414,11 +434,93 @@
                 <div class="mt-4 bg-gray-50 p-3 rounded text-center text-sm text-slate-500">在同等規模 (100人) 下，ECHO 具備最佳的成本效益比，且適合集團擴充。</div>
             </div>`;
 
-        // --- Slide 10-14 (Standard) ---
+        // --- Slide 10: Features ---
         slidesData[10] = `<div class="h-full flex flex-col"><div class="mb-6"><p class="subtitle">Comparison Detail</p><h2 class="text-big font-bold text-slate-800">競品功能詳細比較</h2></div><div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex-grow"><table class="design-table h-full"><thead><tr><th style="width: 15%">功能</th><th style="width: 20%">情境模擬類</th><th style="width: 20%">LMS 賦能類</th><th style="width: 20%">通用 AI</th><th style="width: 25%" class="bg-echo-green text-white">鳳凰互動 ECHO</th></tr></thead><tbody><tr><td class="font-bold text-slate-700">非語言溝通</td><td class="text-gray-400">-</td><td><span class="text-yellow-500">△</span> (音量/手勢)</td><td class="text-gray-400">-</td><td class="echo-col text-lg">✔✔ (眼神/微表情)</td></tr><tr><td class="font-bold text-slate-700">投入度預測</td><td class="text-gray-400">-</td><td class="text-gray-400">-</td><td class="text-gray-400">-</td><td class="echo-col text-lg">✔ (獨家預測模型)</td></tr><tr><td class="font-bold text-slate-700">影響力分析</td><td class="text-gray-400">-</td><td class="text-gray-400">-</td><td class="text-gray-400">-</td><td class="echo-col text-lg">✔✔ (說服力量化)</td></tr><tr><td class="font-bold text-slate-700">個人化 AI</td><td><span class="text-green-600">✔</span></td><td><span class="text-green-600">✔</span></td><td><span class="text-green-600">✔</span></td><td class="echo-col text-lg">✔✔ (專屬教練)</td></tr></tbody></table></div><p class="mt-6 text-center text-slate-500 font-medium">ECHO 能預測「觀眾是否會睡著」，並實現「自動化培訓」，這是降本增效的關鍵。</p></div>`;
+
+        // --- Slide 11: Core Features ---
         slidesData[11] = `<div class="h-full flex flex-col"><div class="text-center mb-10"><p class="subtitle">Core Capabilities</p><h2 class="text-big font-bold text-slate-900">ECHO 四大核心突破</h2></div><div class="grid grid-cols-2 gap-8 flex-grow"><div class="card-base hover:shadow-xl transition-all border-l-4 border-transparent hover:border-echo-green flex flex-col"><div class="flex justify-between items-start mb-4"><div class="w-12 h-12 rounded-lg bg-green-50 text-echo-green flex items-center justify-center text-2xl"><i class="fa-regular fa-comments"></i></div><span class="text-xs font-bold text-gray-300">FEATURE 01</span></div><h3 class="text-xl font-bold mb-2 text-slate-800">多模態情緒分析</h3><p class="text-slate-500 text-sm leading-relaxed flex-grow">同步偵測臉部、語音語調、內容，提供客觀指標化評分。</p><div class="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs font-bold text-alert-red"><i class="fa-solid fa-check"></i> 解決痛點：主觀偏誤</div></div><div class="card-base hover:shadow-xl transition-all border-l-4 border-transparent hover:border-echo-green flex flex-col"><div class="flex justify-between items-start mb-4"><div class="w-12 h-12 rounded-lg bg-green-50 text-echo-green flex items-center justify-center text-2xl"><i class="fa-solid fa-brain"></i></div><span class="text-xs font-bold text-echo-green bg-green-100 px-2 py-1 rounded">獨家</span></div><h3 class="text-xl font-bold mb-2 text-slate-800">觀眾投入度預測</h3><p class="text-slate-500 text-sm leading-relaxed flex-grow">無需真實觀眾，AI 即可推算視線追蹤與參與度。</p><div class="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs font-bold text-alert-red"><i class="fa-solid fa-check"></i> 解決痛點：品控滯後</div></div><div class="card-base hover:shadow-xl transition-all border-l-4 border-transparent hover:border-echo-green flex flex-col"><div class="flex justify-between items-start mb-4"><div class="w-12 h-12 rounded-lg bg-green-50 text-echo-green flex items-center justify-center text-2xl"><i class="fa-solid fa-user-graduate"></i></div><span class="text-xs font-bold text-gray-300">FEATURE 03</span></div><h3 class="text-xl font-bold mb-2 text-slate-800">個人化 AI 教練</h3><p class="text-slate-500 text-sm leading-relaxed flex-grow">根據講師風格自動生成學習報告，提供 24hr 陪練。</p><div class="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs font-bold text-alert-red"><i class="fa-solid fa-check"></i> 解決痛點：人力分散</div></div><div class="card-base hover:shadow-xl transition-all border-l-4 border-transparent hover:border-echo-green flex flex-col"><div class="flex justify-between items-start mb-4"><div class="w-12 h-12 rounded-lg bg-green-50 text-echo-green flex items-center justify-center text-2xl"><i class="fa-solid fa-magnifying-glass-chart"></i></div><span class="text-xs font-bold text-gray-300">FEATURE 04</span></div><h3 class="text-xl font-bold mb-2 text-slate-800">影響因子識別</h3><p class="text-slate-500 text-sm leading-relaxed flex-grow">識別「提升投入度」的關鍵要素，建立組織知識庫。</p><div class="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs font-bold text-alert-red"><i class="fa-solid fa-check"></i> 解決痛點：經驗斷層</div></div></div></div>`;
-        slidesData[12] = `<div class="h-full flex flex-col"><div class="mb-8"><p class="subtitle">Solution Deep Dive</p><h2 class="text-big font-bold text-slate-800">解決方案：篩選與培訓</h2></div><div class="grid grid-cols-2 gap-10 h-full"><div class="card-base border-t-8 border-blue-600 flex flex-col justify-between hover:shadow-lg transition-all"><div><h3 class="text-2xl font-bold text-blue-800 mb-4">針對：講師篩選</h3><p class="text-lg text-slate-600 mb-6 leading-relaxed"><strong>對策：</strong><br>多模態分析，5分鐘量化「表達、情緒、語調」，減少主觀偏誤。</p></div><div class="bg-blue-50 p-6 rounded-xl border border-blue-100"><p class="font-bold text-blue-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-blue-800"><li>✅ 篩選週期：2週 → 1週</li><li>💰 人事成本省：<strong>NT$ 48 萬/年</strong></li><li>📈 提升優秀人才識別率</li></ul></div></div><div class="card-base border-t-8 border-blue-600 flex flex-col justify-between hover:shadow-lg transition-all"><div><h3 class="text-2xl font-bold text-blue-800 mb-4">針對：個人化培訓</h3><p class="text-lg text-slate-600 mb-6 leading-relaxed"><strong>對策：</strong><br>AI 陪練系統，隨時提供針對性建議，無需等待資深講師。</p></div><div class="bg-blue-50 p-6 rounded-xl border border-blue-100"><p class="font-bold text-blue-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-blue-800"><li>✅ 資深講師輔導時數：減少 40%</li><li>💰 輔導成本省：<strong>NT$ 96 萬/年</strong></li><li>🚀 獨立上線週期：縮短 1 個月</li></ul></div></div></div></div>`;
-        slidesData[13] = `<div class="h-full flex flex-col"><div class="mb-8"><p class="subtitle">Solution Deep Dive</p><h2 class="text-big font-bold text-slate-800">解決方案：品質與追蹤</h2></div><div class="grid grid-cols-2 gap-10 h-full"><div class="card-base border-t-8 border-red-500 flex flex-col justify-between hover:shadow-lg transition-all"><div><h3 class="text-2xl font-bold text-red-700 mb-4">針對：內容品質評估</h3><p class="text-lg text-slate-600 mb-6 leading-relaxed"><strong>對策：</strong><br>投入度預測模型，錄製階段即時預判問題，避免上線後才修改。</p></div><div class="bg-red-50 p-6 rounded-xl border border-red-100"><p class="font-bold text-red-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-red-800"><li>✅ 問題捕捉率：提升 80%</li><li>💰 課程迭代成本：<strong>預期減半 (省 $25萬)</strong></li><li>🚀 大幅減少事後重錄</li></ul></div></div><div class="card-base border-t-8 border-red-500 flex flex-col justify-between hover:shadow-lg transition-all"><div><h3 class="text-2xl font-bold text-red-700 mb-4">針對：效果追蹤滯後</h3><p class="text-lg text-slate-600 mb-6 leading-relaxed"><strong>對策：</strong><br>即時動態報告，課後立刻回饋，實現敏捷應對。</p></div><div class="bg-red-50 p-6 rounded-xl border border-red-100"><p class="font-bold text-red-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-red-800"><li>✅ 滿意度：預期提升 20%</li><li>💰 避免營收損失：<strong>NT$ 15-20 萬</strong></li><li>🛡️ 降低學員流失率</li></ul></div></div></div></div>`;
+
+        // --- Slide 12: Solution 1 & 2 ---
+        slidesData[12] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-8"><p class="subtitle">Solution Deep Dive</p><h2 class="text-big font-bold text-slate-800">解決方案：篩選與培訓</h2></div>
+                <div class="grid grid-cols-2 gap-10 h-full">
+                    <div class="card-base border-t-8 border-blue-600 flex flex-col justify-between hover:shadow-lg transition-all">
+                        <div>
+                            <h3 class="text-2xl font-bold text-blue-800 mb-4">針對：講師篩選 (Recruitment)</h3>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">痛點：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li>iSpan 全台 5 據點海量履歷，人工篩選效率低。</li>
+                                <li>iSpan 招募標準與 DEI 審核標準常有落差。</li>
+                            </ul>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">ECHO 對策：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li><strong>AI 快篩：</strong> 自動對標 DEI 職能模型，快速剔除不合格者。</li>
+                                <li><strong>標準一致：</strong> iSpan 可依據 AI 報告進行精準初選。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-100"><p class="font-bold text-blue-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-blue-800"><li>✅ 篩選週期：2週 → 1週</li><li>💰 人事成本省：<strong>NT$ 48 萬/年</strong></li><li>📈 提升優秀人才識別率</li></ul></div>
+                    </div>
+                    <div class="card-base border-t-8 border-blue-600 flex flex-col justify-between hover:shadow-lg transition-all">
+                        <div>
+                            <h3 class="text-2xl font-bold text-blue-800 mb-4">針對：個人化培訓 (Training)</h3>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">痛點：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li>專任新人需 60hr+ 輔導，DEI 資深人力有限。</li>
+                                <li>外聘專家需快速上線，無法長時間集訓。</li>
+                            </ul>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">ECHO 對策：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li><strong>AI 陪練：</strong> 提供 24hr 自主練習環境與即時回饋。</li>
+                                <li><strong>分級輔導：</strong> AI 處理基礎問題，真人僅需處理高階問題。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-100"><p class="font-bold text-blue-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-blue-800"><li>✅ 資深講師輔導時數：減少 40%</li><li>💰 輔導成本省：<strong>NT$ 96 萬/年</strong></li><li>🚀 獨立上線週期：縮短 1 個月</li></ul></div>
+                    </div>
+                </div>
+            </div>`;
+
+        // --- Slide 13: Solution 3 & 4 ---
+        slidesData[13] = `
+            <div class="h-full flex flex-col">
+                <div class="mb-8"><p class="subtitle">Solution Deep Dive</p><h2 class="text-big font-bold text-slate-800">解決方案：品質與追蹤</h2></div>
+                <div class="grid grid-cols-2 gap-10 h-full">
+                    <div class="card-base border-t-8 border-red-500 flex flex-col justify-between hover:shadow-lg transition-all">
+                        <div>
+                            <h3 class="text-2xl font-bold text-red-700 mb-4">針對：內容品質評估 (Quality)</h3>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">痛點：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li>問題多在開課後才發現，修改與重錄成本極高。</li>
+                                <li>iSpan 營運端缺乏客觀數據與 DEI 溝通品質問題。</li>
+                            </ul>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">ECHO 對策：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li><strong>投入度預測：</strong> 錄製階段即預判學員反應 (Cold Spot)。</li>
+                                <li><strong>預防性品控：</strong> 上線前即完成修正，降低客訴風險。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 p-6 rounded-xl border border-red-100"><p class="font-bold text-red-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-red-800"><li>✅ 問題捕捉率：提升 80%</li><li>💰 課程迭代成本：<strong>預期減半 (省 $25萬)</strong></li><li>🚀 大幅減少事後重錄</li></ul></div>
+                    </div>
+                    <div class="card-base border-t-8 border-red-500 flex flex-col justify-between hover:shadow-lg transition-all">
+                        <div>
+                            <h3 class="text-2xl font-bold text-red-700 mb-4">針對：效果追蹤滯後 (Tracking)</h3>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">痛點：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li>結業後才看問卷，難以挽救當期流失學員。</li>
+                                <li>問卷主觀，難以建立跨校區的客觀評比。</li>
+                            </ul>
+                            <p class="text-lg text-slate-600 mb-4 font-bold">ECHO 對策：</p>
+                            <ul class="list-disc ml-5 mb-4 text-slate-600 text-sm">
+                                <li><strong>動態戰情室：</strong> 整合 AI 數據與學員回饋，建立領先指標。</li>
+                                <li><strong>敏捷調整：</strong> 課程進行中即可介入改善。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 p-6 rounded-xl border border-red-100"><p class="font-bold text-red-900 mb-2 text-sm uppercase tracking-wide">預估效益</p><ul class="text-base space-y-2 text-red-800"><li>✅ 滿意度：預期提升 20%</li><li>💰 避免營收損失：<strong>NT$ 15-20 萬</strong></li><li>🛡️ 降低學員流失率</li></ul></div>
+                    </div>
+                </div>
+            </div>`;
+
+        // --- Slide 14: UX ---
         slidesData[14] = `<div class="h-full flex flex-col"><div class="mb-10 text-center"><p class="subtitle">User Experience</p><h2 class="text-big font-bold text-slate-800">低門檻、高效能的 AI 教練循環</h2></div><div class="grid grid-cols-4 gap-6 text-center mb-10 flex-grow items-center"><div class="card-base bg-slate-50 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-blue-300">⬆️</span><p class="font-bold text-xl text-slate-700">上傳影片</p><p class="text-sm text-slate-400 mt-2">主流格式/免安裝</p></div><div class="card-base border-blue-100 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-brand-blue">🧠</span><p class="font-bold text-xl text-slate-700">AI 分析</p><p class="text-sm text-slate-400 mt-2">5分鐘完成</p></div><div class="card-base border-blue-100 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-brand-blue">📈</span><p class="font-bold text-xl text-slate-700">查看報告</p><p class="text-sm text-slate-400 mt-2">客觀數據指標</p></div><div class="card-base border-blue-100 h-full flex flex-col justify-center items-center hover:-translate-y-2 transition-transform"><span class="text-4xl mb-4 text-brand-blue">💬</span><p class="font-bold text-xl text-slate-700">AI 互動</p><p class="text-sm text-slate-400 mt-2">多輪對話調整</p></div></div><div class="grid grid-cols-2 gap-8"><div class="card-highlight flex items-center gap-6 py-6"><div class="text-3xl text-echo-green ml-4"><i class="fa-solid fa-check-circle"></i></div><div><h3 class="font-bold text-echo-dark text-xl">快速上傳 (易用)</h3><p class="text-slate-600">無需複雜設定，操作門檻極低。</p></div></div><div class="card-highlight flex items-center gap-6 py-6"><div class="text-3xl text-echo-green ml-4"><i class="fa-solid fa-check-circle"></i></div><div><h3 class="font-bold text-echo-dark text-xl">互動回饋 (高效)</h3><p class="text-slate-600">建立個人化學習檔案，隨時調整。</p></div></div></div></div>`;
 
         // --- Slide 15: Investment ---
@@ -536,10 +638,10 @@
         // --- Other slides ---
         slidesData[19] = `<div class="h-full flex flex-col"><div class="mb-6"><p class="subtitle">Risk Assessment</p><h2 class="text-big font-bold text-slate-800">敏感度分析 - 風險評估</h2></div><div class="flex-grow grid grid-cols-12 gap-10"><div class="col-span-8 card-base p-0 overflow-hidden flex flex-col shadow-lg border-none"><table class="design-table h-full"><thead><tr><th style="width: 25%">情境</th><th style="width: 25%">達成率</th><th style="width: 25%">預期 ROI</th><th style="width: 25%">回本期</th></tr></thead><tbody><tr><td class="font-bold text-echo-green">樂觀情境</td><td>110%</td><td>600%</td><td>< 2 月</td></tr><tr><td class="font-bold text-brand-blue">基準情境</td><td>100%</td><td>533%</td><td>2.3 月</td></tr><tr><td class="font-bold text-slate-500">保守情境</td><td>70%</td><td>370%</td><td>3.5 月</td></tr><tr class="bg-red-50"><td class="font-bold text-alert-red">悲觀情境</td><td class="text-alert-red font-bold">50%</td><td class="text-alert-red font-bold">260%</td><td class="text-alert-red font-bold">4.5 月</td></tr></tbody></table><div class="p-5 bg-gray-50 border-t border-gray-200 text-center text-slate-600 font-medium">Insight: 即使效益減半，半年內仍可回本，財務風險極低。</div></div><div class="col-span-4 flex flex-col gap-6"><h3 class="text-xl font-bold text-slate-800">風險應對策略</h3><div class="card-base border-l-4 border-brand-blue py-6"><h4 class="font-bold text-brand-blue text-lg">✅ 資安與法遵</h4><p class="text-sm text-slate-500 mt-2">符合本地規範，資料落地台灣。</p></div><div class="card-base border-l-4 border-brand-blue py-6"><h4 class="font-bold text-brand-blue text-lg">✅ 系統整合</h4><p class="text-sm text-slate-500 mt-2">不影響既有 LMS，獨立運行。</p></div><div class="card-base border-l-4 border-brand-blue py-6"><h4 class="font-bold text-brand-blue text-lg">✅ 接受度管理</h4><p class="text-sm text-slate-500 mt-2">種子講師試點 + 自願參與機制。</p></div></div></div></div>`;
         slidesData[20] = `<div class="h-full flex flex-col"><div class="mb-6"><p class="subtitle">Implementation Plan</p><h2 class="text-big font-bold text-slate-800">導入時程規劃 (8 週漸進式落地)</h2></div><div class="grid grid-cols-3 gap-10 h-full"><div class="col-span-2 space-y-5 overflow-y-auto pr-2"><div class="card-base shadow-sm p-6 border-l-4 border-brand-blue flex flex-col gap-2"><div class="flex justify-between items-center"><h3 class="font-bold text-brand-blue text-xl">Week 1~2：啟動與系統設定</h3><span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: IT / DEI</span></div><p class="text-slate-600">確認使用場景、組織資料流；協同 IT 完成環境設置。</p></div><div class="card-base shadow-sm p-6 border-l-4 border-brand-blue flex flex-col gap-2"><div class="flex justify-between items-center"><h3 class="font-bold text-brand-blue text-xl">Week 3~4：講師培訓與試點</h3><span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: HR / iSpan</span></div><p class="text-slate-600">選出種子講師進行集中培訓，收集回饋。</p></div><div class="card-base shadow-sm p-6 border-l-4 border-brand-blue flex flex-col gap-2"><div class="flex justify-between items-center"><h3 class="font-bold text-brand-blue text-xl">Week 5~6：正式上線與支援</h3><span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: All Staff</span></div><p class="text-slate-600">全面啟用帳號，技術團隊提供線上支援。</p></div><div class="card-base shadow-sm p-6 border-l-4 border-brand-blue flex flex-col gap-2"><div class="flex justify-between items-center"><h3 class="font-bold text-brand-blue text-xl">Week 7~8：效益評估與建議</h3><span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Owner: Management</span></div><p class="text-slate-600">收集數據、產出首波效益報告。</p></div></div><div class="col-span-1 card-base bg-slate-800 text-white p-10 flex flex-col justify-center border-none shadow-2xl"><h3 class="text-3xl font-bold text-green-400 mb-8">關鍵目標</h3><ul class="space-y-6 text-xl font-light opacity-90 list-disc ml-6"><li>智慧化轉型</li><li>風險最小化</li><li>8 週進入正軌</li></ul></div></div></div>`;
-        slidesData[21] = `<div class="h-full flex flex-col"><div class="mb-6"><p class="subtitle">Success Story</p><h2 class="text-big font-bold text-slate-800">成功案例：台灣知識庫 (TKB)</h2></div><div class="grid grid-cols-2 gap-10 h-full"><div class="flex flex-col gap-6 justify-center"><div class="card-highlight py-8 px-8"><p class="text-5xl font-bold text-echo-green mb-2">+15%</p><h3 class="text-xl font-bold text-slate-800">教學滿意度</h3><p class="text-sm text-slate-500">建立全台分校統一標準，學員好評顯著提升</p></div><div class="card-highlight py-8 px-8"><p class="text-5xl font-bold text-echo-green mb-2">+22%</p><h3 class="text-xl font-bold text-slate-800">數位課程完課率</h3><p class="text-sm text-slate-500">透過 AI 優化錄播品質，提升學員學習動機</p></div><div class="card-highlight py-8 px-8"><p class="text-5xl font-bold text-echo-green mb-2">2.5 倍</p><h3 class="text-xl font-bold text-slate-800">師資培訓效率</h3><p class="text-sm text-slate-500">加速新進與轉型講師上線速度</p></div></div><div class="card-base bg-slate-50 flex flex-col justify-center p-12 border-none"><h3 class="text-2xl font-bold text-slate-800 mb-8 border-b border-gray-200 pb-4">應用亮點與資教所借鏡</h3><ul class="space-y-6 text-slate-700 text-lg"><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>規模化品控：</strong> 跨分校、跨領域統一教學品質標準。</li><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>數位賦能：</strong> 協助傳統名師快適應線上錄播/直播節奏。</li><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>數據決策：</strong> 總部透過 Dashboard 即時掌握各科成效。</li><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>品牌效應：</strong> 強化 TKB 專業形象與榜單優勢。</li></ul><div class="mt-auto p-4 bg-green-100 rounded text-center text-green-900 font-bold text-lg mt-8">實現「集團化、標準化、數據化」的教學管理新高度</div></div></div></div>`;
-        slidesData[22] = `<div class="h-full flex flex-col"><div class="mb-8 text-center"><p class="subtitle">Why Echo</p><h2 class="text-big font-bold text-slate-800">選擇 ECHO 的五大理由</h2></div><div class="flex-grow grid grid-cols-3 gap-8"><div class="card-base hover:border-blue-500 transition-colors p-8"><h3 class="text-2xl font-bold text-slate-800 mb-4">🇹🇼 台灣本土研發</h3><p class="text-slate-600">在地技術維運，最懂語境需求。</p></div><div class="card-highlight hover:shadow-lg transition-shadow p-8"><h3 class="text-2xl font-bold text-green-800 mb-4">🧠 領先多模態分析</h3><p class="text-slate-600">影像+語音+文字，全面把握情感流動。</p></div><div class="card-base border-t-8 border-brand-blue p-8"><h3 class="text-2xl font-bold text-slate-800 mb-4">👥 招募培訓賦能</h3><p class="text-slate-600">打造自動化人才供應鏈，解決師資缺口。</p></div><div class="col-span-3 grid grid-cols-2 gap-8"><div class="card-highlight hover:shadow-lg transition-shadow p-8 flex flex-col justify-center"><h3 class="text-2xl font-bold text-green-800 mb-2">💰 彈性訂閱 + 專業服務</h3><p class="text-slate-600">階梯式訂閱 (Tiered SaaS) 降低門檻，顧問賦能確保落地。</p></div><div class="card-base hover:border-blue-500 transition-colors p-8 flex flex-col justify-center"><h3 class="text-2xl font-bold text-slate-800 mb-2">🚀 部署快速風險低</h3><p class="text-slate-600">專人伴走，8週驗證效益，不用摸索。</p></div></div></div><div class="mt-8 bg-slate-900 text-white p-4 rounded text-center text-xl font-bold">我們投資的不是工具，而是資教所升級智慧教育生態系的門票。</div></div>`;
-        slidesData[23] = `<div class="h-full flex flex-col"><div class="mb-8"><p class="subtitle">Action Plan</p><h2 class="text-big font-bold text-slate-800">下一步行動建議 (Next Steps)</h2></div><div class="flex-grow grid grid-cols-3 gap-8"><div class="card-base border-t-8 border-brand-blue flex flex-col justify-start p-8"><h3 class="text-2xl font-bold text-brand-blue mb-6">短期 (1~2 個月)</h3><ul class="list-disc ml-5 text-slate-600 space-y-3"><li>安排 ECHO 正式展示說明會。</li><li>選定 5 位種子講師 (含 <strong>ispan 代表</strong>)。</li><li>設定 KPI (篩選、品質、投入度)。</li><li>快速產出第一波效益回報。</li></ul></div><div class="card-base border-t-8 border-yellow-500 flex flex-col justify-start p-8"><h3 class="text-2xl font-bold text-yellow-700 mb-6">中期 (3~6 個月)</h3><ul class="list-disc ml-5 text-slate-600 space-y-3"><li>正式簽約，擴展全職/兼職講師。</li><li>建立使用數據 Dashboard。</li><li>啟動 <strong>ispan 聯合試點</strong>，評估跨單位適用性。</li></ul></div><div class="card-base border-t-8 border-green-500 flex flex-col justify-start p-8"><h3 class="text-2xl font-bold text-green-700 mb-6">長期 (6~12 個月)</h3><ul class="list-disc ml-5 text-slate-600 space-y-3"><li>擴及全部課程、所有教學現場，建立專屬資料庫。</li><li><strong>整合資教所相關業務</strong>，建立集團級師資表達力資料庫。</li><li>探索企業客製等多元應用場景。</li></ul></div></div><div class="mt-8 bg-white border-2 border-green-500 rounded-2xl p-8 flex justify-between items-center shadow-xl"><div><h4 class="text-xl font-bold text-green-800 mb-2">本次會議建議決策</h4><p class="text-slate-600">請核准啟動跨單位聯合試點，以最小成本驗證效益。</p></div><div class="flex gap-4"><div class="px-5 py-3 bg-green-50 rounded text-green-700 font-bold">1. 核准試點預算 (60萬)</div><div class="px-5 py-3 bg-green-50 rounded text-green-700 font-bold">2. 同意 8 週驗證</div><div class="px-5 py-3 bg-green-50 rounded text-green-700 font-bold">3. 指派專案 Sponsor</div></div></div></div>`;
-        slidesData[24] = `<div class="h-full flex flex-col justify-center items-center text-center relative"><div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none"><i class="fa-solid fa-quote-left text-[40rem]"></i></div><h1 class="text-[8rem] font-bold text-slate-900 mb-4 font-serif tracking-tight leading-none">Thank You</h1><div class="w-32 h-2 bg-brand-blue rounded-full mb-12"></div><p class="text-2xl text-slate-500 mb-20 max-w-3xl leading-relaxed">自動化師資供應鏈，始於今日。<br>期待與您攜手打造智慧教育新標竿。</p><div class="grid grid-cols-2 gap-24 text-left"><div><h3 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-200 pb-2">Contact</h3><p class="text-slate-600 mb-2 text-lg"><i class="fa-solid fa-envelope w-6 text-brand-blue"></i> dei@iii.org.tw</p><p class="text-slate-600 text-lg"><i class="fa-solid fa-phone w-6 text-brand-blue"></i> (02) 6631-6666</p></div><div><h3 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-200 pb-2">Resource</h3><a href="#" class="text-slate-600 hover:text-brand-blue transition-colors flex items-center text-lg"><i class="fa-solid fa-globe w-6 text-brand-blue"></i> hrda.pro/echo</a></div></div></div>`;
+        slidesData[21] = `<div class="h-full flex flex-col"><div class="mb-6"><p class="subtitle">Success Story</p><h2 class="text-big font-bold text-slate-800">成功案例：台灣知識庫 (TKB)</h2></div><div class="grid grid-cols-2 gap-10 h-full"><div class="flex flex-col gap-6 justify-center"><div class="card-highlight py-8 px-8"><p class="text-5xl font-bold text-echo-green mb-2">+15%</p><h3 class="text-xl font-bold text-slate-800">教學滿意度</h3><p class="text-sm text-slate-500">建立全台分校統一標準，學員好評顯著提升</p></div><div class="card-highlight py-8 px-8"><p class="text-5xl font-bold text-echo-green mb-2">+22%</p><h3 class="text-xl font-bold text-slate-800">數位課程完課率</h3><p class="text-sm text-slate-500">透過 AI 優化錄播品質，提升學員學習動機</p></div><div class="card-highlight py-8 px-8"><p class="text-5xl font-bold text-echo-green mb-2">2.5 倍</p><h3 class="text-xl font-bold text-slate-800">師資培訓效率</h3><p class="text-sm text-slate-500">加速新進與轉型講師上線速度</p></div></div><div class="card-base bg-slate-50 flex flex-col justify-center p-12 border-none"><h3 class="text-2xl font-bold text-slate-800 mb-8 border-b border-gray-200 pb-4">應用亮點與數位教育研究所借鏡</h3><ul class="space-y-6 text-slate-700 text-lg"><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>規模化品控：</strong> 跨分校、跨領域統一教學品質標準。</li><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>數位賦能：</strong> 協助傳統名師快適應線上錄播/直播節奏。</li><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>數據決策：</strong> 總部透過 Dashboard 即時掌握各科成效。</li><li class="flex items-start"><span class="text-echo-green mr-3 text-xl">✔</span> <strong>品牌效應：</strong> 強化 TKB 專業形象與榜單優勢。</li></ul><div class="mt-auto p-4 bg-green-100 rounded text-center text-green-900 font-bold text-lg mt-8">實現「集團化、標準化、數據化」的教學管理新高度</div></div></div></div>`;
+        slidesData[22] = `<div class="h-full flex flex-col"><div class="mb-8 text-center"><p class="subtitle">Why Echo</p><h2 class="text-big font-bold text-slate-800">選擇 ECHO 的五大理由</h2></div><div class="flex-grow grid grid-cols-3 gap-8"><div class="card-base hover:border-blue-500 transition-colors p-8"><h3 class="text-2xl font-bold text-slate-800 mb-4">🇹🇼 台灣本土研發</h3><p class="text-slate-600">在地技術維運，最懂語境需求。</p></div><div class="card-highlight hover:shadow-lg transition-shadow p-8"><h3 class="text-2xl font-bold text-green-800 mb-4">🧠 領先多模態分析</h3><p class="text-slate-600">影像+語音+文字，全面把握情感流動。</p></div><div class="card-base border-t-8 border-brand-blue p-8"><h3 class="text-2xl font-bold text-slate-800 mb-4">👥 招募培訓賦能</h3><p class="text-slate-600">打造自動化人才供應鏈，解決師資缺口。</p></div><div class="col-span-3 grid grid-cols-2 gap-8"><div class="card-highlight hover:shadow-lg transition-shadow p-8 flex flex-col justify-center"><h3 class="text-2xl font-bold text-green-800 mb-2">💰 彈性訂閱 + 專業服務</h3><p class="text-slate-600">階梯式訂閱 (Tiered SaaS) 降低門檻，顧問賦能確保落地。</p></div><div class="card-base hover:border-blue-500 transition-colors p-8 flex flex-col justify-center"><h3 class="text-2xl font-bold text-slate-800 mb-2">🚀 部署快速風險低</h3><p class="text-slate-600">專人伴走，8週驗證效益，不用摸索。</p></div></div></div></div>`;
+        slidesData[23] = `<div class="h-full flex flex-col"><div class="mb-8"><p class="subtitle">Action Plan</p><h2 class="text-big font-bold text-slate-800">下一步行動建議 (Next Steps)</h2></div><div class="flex-grow grid grid-cols-3 gap-8"><div class="card-base border-t-8 border-brand-blue flex flex-col justify-start p-8"><h3 class="text-2xl font-bold text-brand-blue mb-6">短期 (1~2 個月)</h3><ul class="list-disc ml-5 text-slate-600 space-y-3"><li>安排 ECHO 正式展示說明會。</li><li>選定 5 位種子講師 (含 <strong>ispan 代表</strong>)。</li><li>設定 KPI (篩選、品質、投入度)。</li><li>快速產出第一波效益回報。</li></ul></div><div class="card-base border-t-8 border-yellow-500 flex flex-col justify-start p-8"><h3 class="text-2xl font-bold text-yellow-700 mb-6">中期 (3~6 個月)</h3><ul class="list-disc ml-5 text-slate-600 space-y-3"><li>正式簽約，擴展全職/兼職講師。</li><li>建立使用數據 Dashboard。</li><li>啟動 <strong>ispan 聯合試點</strong>，評估跨單位適用性。</li></ul></div><div class="card-base border-t-8 border-green-500 flex flex-col justify-start p-8"><h3 class="text-2xl font-bold text-green-700 mb-6">長期 (6~12 個月)</h3><ul class="list-disc ml-5 text-slate-600 space-y-3"><li>擴及全部課程、所有教學現場，建立專屬資料庫。</li><li><strong>整合數位教育研究所相關業務</strong>，建立集團級師資表達力資料庫。</li><li>探索企業客製等多元應用場景。</li></ul></div></div><div class="mt-8 bg-white border-2 border-green-500 rounded-2xl p-8 flex justify-between items-center shadow-xl"><div><h4 class="text-xl font-bold text-green-800 mb-2">本次會議建議決策</h4><p class="text-slate-600">請核准啟動跨單位聯合試點，以最小成本驗證效益。</p></div><div class="flex gap-4"><div class="px-5 py-3 bg-green-50 rounded text-green-700 font-bold">1. 核准試點預算 (60萬)</div><div class="px-5 py-3 bg-green-50 rounded text-green-700 font-bold">2. 同意 8 週驗證</div><div class="px-5 py-3 bg-green-50 rounded text-green-700 font-bold">3. 指派專案 Sponsor</div></div></div></div>`;
+        slidesData[24] = `<div class="h-full flex flex-col justify-center items-center text-center relative"><div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none"><i class="fa-solid fa-quote-left text-[40rem]"></i></div><h1 class="text-[8rem] font-bold text-slate-900 mb-4 font-serif tracking-tight leading-none">Thank You</h1><div class="w-32 h-2 bg-brand-blue rounded-full mb-12"></div><p class="text-2xl text-slate-500 mb-20 max-w-3xl leading-relaxed">自動化師資供應鏈，始於今日。<br>期待與您攜手打造智慧教育新標竿。</p><div class="flex flex-col items-center gap-4 text-center"><div><h3 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-200 pb-2 inline-block px-8">Resource</h3><div class="flex justify-center"><a href="#" class="text-slate-600 hover:text-brand-blue transition-colors flex items-center text-lg"><i class="fa-solid fa-globe w-6 text-brand-blue"></i> hrda.pro/echo</a></div></div></div></div>`;
 
         let currentSlide = 1;
         const totalSlides = 24;
